@@ -1,0 +1,396 @@
+# PRIMARY OUTPUT DIRECTIVE
+# Generate complete, executable Python code for Manim Community v0.19+ that creates educational animations.
+# Output only Python code—no markdown, explanations, or code fences.
+
+# ADAPTIVE CORE PRINCIPLES
+# - Self-Healing: If uncertain about any code section, use safe fallbacks
+# - Graceful Degradation: Complex features can fall back to simpler equivalents
+# - Future-Proof: Built-in compatibility checks and version-agnostic patterns
+# - Creative Freedom: Core rules are enforced, but creative implementation is encouraged
+# - Flexible Execution: Total minimum 150s runtime with natural pacing
+# - If a helper method is referenced, always include its full definition (even if minimal) so the code runs without errors.
+# - "Never end code mid-block—if in doubt, generate stubs for missing methods or complete the current method even if it means exceeding an internal line count. The absolute highest priority is syntactical completeness of the final generated block."
+# - Never include (`python) to the script in anycase
+# - Generate Manim code in scene classes or functions no longer than 500 lines each.
+# - Stop code generation cleanly at logical boundaries such as end of methods or classes.
+
+# MANDATORY FOUNDATION
+
+# MANDATORY FOUNDATION
+from manim import *
+import numpy as np
+import random
+import os # Added for image path handling
+from manim_voiceover import VoiceoverScene
+# gTTS (manim_voiceover.services.gtts) is a simple, free, and cloud-based TTS engine.
+# Ensure it's installed (pip install gTTS manim-voiceover[gtts]).
+from manim_voiceover.services.gtts import GTTSService 
+
+# Safety helpers (always include these)
+def to3(p):
+    p = np.array(p, dtype=float).reshape(-1)
+    if p.shape[0] == 2: return np.array([p[0], p[1], 0.0])
+    if p.shape[0] == 3: return p.astype(float)
+    return np.array([p[0], p[1], 0.0]) if len(p) >= 2 else np.array([0.0, 0.0, 0.0])
+
+def to3Nx(points):
+    arr = np.array(points, dtype=float)
+    if arr.ndim == 1: return to3(arr).reshape(1, 3)
+    if arr.ndim == 2:
+        if arr.shape[1] >= 2:
+            if arr.shape[1] == 2:
+                return np.hstack([arr, np.zeros((arr.shape[0], 1))])
+            return arr[:, :3] if arr.shape[1] >= 3 else arr
+    return np.array([[0.0, 0.0, 0.0]])
+
+# CRITICAL IMPORT SAFETY - Always include all required colors and objects
+from manim import BLUE, RED, GREEN, GOLD, YELLOW, WHITE, GREY_B, GREY_C, PURPLE, PINK, ORANGE, TEAL, BLACK
+
+def safe_color(c, fallback=BLUE):
+    valid_colors = [BLUE, RED, GREEN, GOLD, YELLOW, WHITE, GREY_B, GREY_C, PURPLE, PINK, ORANGE, TEAL, BLACK]
+    if c == MAGENTA: return PURPLE
+    if c in valid_colors: return c
+    if isinstance(c, (tuple, list)) and len(c) >= 3: return tuple(float(v) for v in c[:3])
+    return fallback
+
+
+# FLEXIBLE API RULES WITH FALLBACKS
+
+## LaTeX & Text Rules
+# - Primary: Use MathTex(r"formula") with raw strings
+# - Fallback: Use Text("formula") if LaTeX compilation fails
+# - Greek Letters: LaTeX commands (\theta, \alpha) preferred, but Unicode acceptable as fallback
+# - Braces: Single braces preferred {{}}, double braces {{{{}}}} acceptable if needed
+# - Indexing: Create separate MathTex objects instead of indexing when possible
+
+## Animation API (Auto-Adaptive)
+# - Preferred: Create, Write, FadeIn, FadeOut, Transform, ReplacementTransform, Indicate, Flash
+# - Deprecated Handling: Use try/except blocks for compatibility
+# Safe animation pattern
+# try:
+#     self.play(Create(obj))
+# except:
+#     self.play(FadeIn(obj))  # Fallback
+
+# IMAGE INTEGRATION REQUIREMENTS
+
+# When generating Manim code, automatically include relevant images from the extracted PDF:
+
+## Image Display Rules:
+# Use ImageMobject to load and display images from the images folder
+# Display images when explaining concepts that have corresponding visual aids
+# Position images appropriately (right side, corner, or center based on content)
+# Scale images to fit within the scene without overlapping text
+# Use FadeIn/FadeOut animations for smooth image transitions
+
+## Image Integration Pattern:
+# CRITICAL: Always include try/except blocks around ImageMobject creation to handle missing or corrupted image files gracefully.
+
+## Image-Content Matching:
+# Check the metadata JSON for image context and keywords
+# Display images when explaining concepts that match the image keywords
+# For graphs/charts: show during data analysis or results sections
+# For formulas: display during mathematical derivations
+# For diagrams: show during concept explanations
+
+## Required Image Processing:
+# Use the image metadata from metadata to determine:
+# 1. Which images to show and when
+# 2. What type of content each image represents
+# 3. How to position and scale each image appropriately
+# 4. What explanatory text should accompany each image
+
+# CRITICAL: Always include try/except blocks around ImageMobject creation to handle missing or corrupted image files gracefully.
+
+
+## Color System (Robust)
+# - Primary: Named Manim colors (BLUE, RED, GREEN, etc.)
+# - Secondary: RGB tuples (r, g, b) where each is 0.0-1.0
+# - Fallback: safe_color() function handles any edge cases
+# - MAGENTA Issue: Automatically replaced with PURPLE
+
+## Coordinate System (Universal)
+# - All coordinates: Use helper functions to3() and to3Nx()
+# - Auto-correction: Functions handle 2D inputs gracefully
+# - Fallback: Default to ORIGIN if coordinate conversion fails
+
+# ================= SYNC & PACE FIX =================
+# Voiceover & Video Sync Enhancements
+
+# 1. Automatic Duration Adjustment:
+#    - Ensure animations fully match the voiceover duration.
+#    - If audio is shorter than the animation, animation waits until audio finishes.
+#    - If audio is longer than animation, extend animation to match audio duration.
+#    - Use the following pattern inside each voiceover block:
+
+#    with self.voiceover(text="Narration text") as tracker:
+#        anim = SomeAnimation(obj)
+#        self.play(anim, run_time=max(anim.runtime, tracker.duration))
+#        # Optional: wait remaining time if animation ended early
+#        if tracker.duration > anim.runtime:
+#            self.wait(tracker.duration - anim.runtime)
+
+# 2. Default Animation Speeds:
+#    - Avoid using fixed run_time values like 1 or 2 seconds.
+#    - Always use dynamic pacing:
+#        run_time = tracker.duration * scaling_factor
+#    - scaling_factor ~ 1.0-1.2 ensures animation completes slightly before audio ends.
+
+# 3. Ensure Audio Always Plays:
+#    - Wrap all visual sequences in `with self.voiceover(...)` blocks.
+#    - Do not place animations outside voiceover blocks if narration is required.
+#    - Use `self.wait()` after each voiceover block to avoid skipping audio.
+
+# 4. Safe Fallback for Missing Audio:
+#    - If GTTS fails for any segment, insert `tracker.duration = estimated_duration`
+#    - Prevents animations from stalling or running too fast.
+
+# 5. Optional Pace Optimization:
+#    - For long explanatory text, split into multiple shorter voiceover blocks.
+#    - Example:
+#        with self.voiceover(text="First part of narration") as tracker1:
+#            self.play(FadeIn(obj1), run_time=tracker1.duration)
+#        with self.voiceover(text="Second part") as tracker2:
+#            self.play(FadeIn(obj2), run_time=tracker2.duration)
+#    - This ensures proper pacing and keeps audio synchronized.
+
+# 6. Recommended Template Change for All Methods:
+#    - Replace all `self.play(..., run_time=tracker.duration)` with:
+#        actual_run_time = max(getattr(anim, "runtime", 0), tracker.duration)
+#        self.play(anim, run_time=actual_run_time)
+#        if tracker.duration > actual_run_time:
+#            self.wait(tracker.duration - actual_run_time)
+#    - Guarantees animation completion while syncing perfectly with audio.
+
+# ADAPTIVE STRUCTURE TEMPLATE
+# NEW MANIM VOICEOVER INTEGRATION RULES:
+# 1. Always inherit from VoiceoverScene (from manim_voiceover).
+# 2. Always set a speech service at the beginning of construct using GTTSService.
+#    gTTS is a free, cloud-based TTS engine. Ensure it's installed (pip install gTTS manim-voiceover[gtts]).
+# 3. Enclose every logical visual block or narration segment within a `with self.voiceover(text="Your narration text here.") as tracker:` block.
+# 4. Inside a voiceover block, ensure animations use `run_time=tracker.duration` where appropriate.
+#    If an animation is shorter than the narration, the system will automatically `wait` until the voiceover finishes.
+#    If an animation needs to be *longer* than the narration, you must explicitly set a `run_time` greater than `tracker.duration`
+#    or add a `self.wait()` after the animation within the voiceover block.
+# 5. Keep the code clean, modular, and easy to read.
+
+class GeneratedEducationalScene(VoiceoverScene):
+    def construct(self):
+        # Set speech service to GTTSService for free, cloud-based TTS.
+        # Ensure you have installed it: pip install gTTS manim-voiceover[gtts]
+        self.set_speech_service(GTTSService()) 
+
+        print("Sanity:", isinstance(BLUE, type(WHITE)), "colors OK")
+        
+        try: self.show_introduction()
+        except Exception as e: print(f"Error in show_introduction: {{e}}")
+        
+        try: self.explain_core_concepts()
+        except Exception as e: print(f"Error in explain_core_concepts: {{e}}")
+        
+        try: self.show_mathematical_derivation() 
+        except Exception as e: print(f"Error in show_mathematical_derivation: {{e}}")
+        
+        try: self.demonstrate_examples()
+        except Exception as e: print(f"Error in demonstrate_examples: {{e}}")
+        
+        try: self.highlight_applications()
+        except Exception as e: print(f"Error in highlight_applications: {{e}}")
+        
+        try: self.summarize_key_points()
+        except Exception as e: print(f"Error in summarize_key_points: {{e}}")
+    
+    # Implement relevant methods based on topic complexity
+    def show_introduction(self):
+        # Example of voiceover block usage
+        with self.voiceover(text="Welcome to this lesson. We will explore key concepts today.") as tracker:
+            title = Title("Introduction to Topic")
+            self.play(Write(title), run_time=tracker.duration)
+            self.wait(0.5) # Small optional pause for natural pacing
+        
+        with self.voiceover(text="Our journey will cover several important areas.") as tracker:
+            intro_text = Text("Understanding key ideas", font_size=36).next_to(title, DOWN)
+            self.play(FadeIn(intro_text), run_time=tracker.duration)
+            self.wait(0.5)
+            
+        # Ensure all methods have at least a pass or self.wait() to prevent ending mid-block
+        self.wait(1)
+
+    def explain_core_concepts(self):
+        # Placeholder for core concepts explanation
+        with self.voiceover(text="Now, let's delve into the core concepts.") as tracker:
+            concept_title = Text("Core Concepts", font_size=48).to_edge(UP)
+            self.play(Transform(self.mobjects[0], concept_title), run_time=tracker.duration)
+        self.wait(1)
+    
+    def show_mathematical_derivation(self):
+        # Placeholder for mathematical derivation
+        with self.voiceover(text="We will now explore the mathematical underpinnings.") as tracker:
+            math_text = MathTex(r"\sum_{{i=1}}^{{n}} x_i", font_size=72).move_to(ORIGIN)
+            self.play(FadeIn(math_text), run_time=tracker.duration)
+        self.wait(1)
+
+    def demonstrate_examples(self):
+        # Placeholder for demonstrating examples
+        with self.voiceover(text="Let's look at some practical examples to solidify our understanding.") as tracker:
+            example_text = Text("Example 1", font_size=48).to_edge(UP)
+            self.play(Transform(self.mobjects[0], example_text), run_time=tracker.duration)
+        self.wait(1)
+
+    def highlight_applications(self):
+        # Placeholder for highlighting applications
+        with self.voiceover(text="These concepts have wide-ranging applications in various fields.") as tracker:
+            app_text = Text("Real-world Applications", font_size=48).to_edge(UP)
+            self.play(Transform(self.mobjects[0], app_text), run_time=tracker.duration)
+        self.wait(1)
+
+    def summarize_key_points(self):
+        # Placeholder for summarizing key points
+        with self.voiceover(text="To conclude, let's review the most important takeaways from this lesson.") as tracker:
+            summary_text = Text("Key Takeaways", font_size=48).to_edge(UP)
+            self.play(Transform(self.mobjects[0], summary_text), run_time=tracker.duration)
+        self.wait(2)
+
+
+# CONTENT ADAPTATION FRAMEWORK
+
+## For Simple Topics
+# - Focus on visual clarity and basic animations
+# - Use straightforward mathematical notation
+# - Emphasize intuitive explanations
+
+## For Complex Topics
+# - Implement full derivation chains
+# - Use advanced animation techniques
+# - Include multiple worked examples
+# - Add comparative analysis sections
+
+## For Any Topic
+# - Runtime Management: Use strategic self.wait() placement
+# - Visual Hierarchy: Clear title/subtitle positioning
+# - Progressive Disclosure: Reveal concepts step-by-step
+# - Error Recovery: Graceful handling of edge cases
+
+# MATHEMATICAL CONTENT PATTERNS
+
+## Safe Scatter Plot Pattern
+def create_safe_scatter(self, x_data, y_data, color=YELLOW):
+    try:
+        x_arr = np.array(x_data, dtype=float)
+        y_arr = np.array(y_data, dtype=float)
+        points = to3Nx(np.column_stack([x_arr, y_arr]))
+        return VGroup(*[Dot(point=p, color=safe_color(color), radius=0.04) for p in points])
+    except:
+        # Fallback: simple demonstration points
+        return VGroup(*[Dot(np.array([i, i, 0]), color=safe_color(color)) for i in range(3)])
+
+## Safe Regression Line Pattern
+def create_safe_line(self, axes, slope, intercept, color=GREEN):
+    try:
+        line = axes.plot(lambda x: slope*x + intercept, color=safe_color(color))
+        return line
+    except:
+        # Manual line fallback
+        p1 = to3([axes.x_range[0], slope*axes.x_range[0] + intercept])
+        p2 = to3([axes.x_range[1], slope*axes.x_range[1] + intercept])
+        return Line(p1, p2, color=safe_color(color))
+
+# CREATIVE FLEXIBILITY ZONES
+
+## Encouraged Creativity
+# - Visual Metaphors: Use creative analogies and representations
+# - Animation Styles: Experiment with timing and transitions
+# - Color Schemes: Choose aesthetically pleasing palettes
+# - Layout Design: Arrange elements for maximum clarity
+# - Narrative Flow: Adapt story structure to content
+
+## Creative Safety Rails
+# - All objects must be positioned to avoid overlaps
+# - Mathematical content must be accurate
+# - Runtime must meet minimum requirements
+# - Core educational goals must be addressed
+
+# AUTO-UPDATING COMPATIBILITY
+
+## Version Adaptability
+# Auto-detect and adapt to API changes
+def safe_axes_creation(self, x_range, y_range, **kwargs):
+    try:
+        # Attempt to use the v0.19+ Axes constructor
+        axes = Axes(x_range=x_range, y_range=y_range, **kwargs)
+        axes.move_to(ORIGIN)
+        return axes
+    except TypeError:
+        # Fallback for older versions or different API if kwargs are an issue
+        # Re-attempt without specific kwargs or with a different constructor pattern
+        # This part might need further refinement based on specific older Manim APIs
+        axes = Axes(x_range=x_range, y_range=y_range)
+        axes.shift_to_origin()
+        return axes
+    except Exception as e:
+        # Generic fallback if anything else fails
+        print(f"Error creating axes, using generic fallback: {{e}}")
+        axes = Axes() # Default axes
+        axes.shift_to_origin()
+        return axes
+
+## Future-Proof Patterns
+# - Use feature detection instead of version checking
+# - Implement graceful fallbacks for new/changed APIs
+# - Maintain backward compatibility where possible
+
+# INPUT INTEGRATION DIRECTIVES
+
+# Primary Content: existing Manim code
+# Reference Material: narrative script
+
+# Adaptive Processing:
+# - Extract key concepts from all input sources
+# - Prioritize user query requirements
+# - Integrate document details where relevant
+# - Reference metadata for context
+# - Include image assets if applicable
+
+# FINAL VALIDATION (AUTO-CORRECTING)
+
+## Self-Checking Mechanisms
+# - Syntax validation with error recovery
+# - Coordinate system verification
+# - Color compatibility checking
+# - Runtime calculation
+# - Mathematical accuracy review
+
+## Auto-Correction Features
+# - Invalid colors → safe_color() replacement
+# - 2D coordinates → to3() conversion
+# - Missing methods → safe fallback implementation
+# - API changes → compatibility layer activation
+
+# DELIVERABLE SPECIFICATION
+
+# Generate a complete, immediately executable Manim script that:
+
+# 1. Runs Successfully: No syntax errors, all methods are fully implemented or appropriately stubbed, complete implementation.
+# 2. Adapts Gracefully: Handles edge cases and API variations
+# 3. Teaches Effectively: Clear educational progression and visual design
+# 4. Performs Robustly: 150+ second runtime with proper pacing
+# 5. Updates Seamlessly: Compatible with current and future Manim versions
+
+# Output Format: Pure Python code only—no explanatory text, markdown, or code blocks.
+
+# CRITICAL COMPLETION GUARANTEE: The generated code MUST be a fully closed and executable Python file.
+# If you are generating a class method, ensure it concludes with self.wait() or self.play() and is properly indented and terminated before the generation stops.
+# Do not terminate mid-statement, mid-line, or mid-method body. The final output must be syntactically valid Python.
+
+# Success Guarantee: This prompt structure ensures successful code generation regardless of LLM capability level, API changes, or edge cases through built-in adaptability and fallback mechanisms.
+
+### Existing Manim Code:
+
+{existing_manim_code}
+
+### Narrative Script:
+
+{narrative_script}
+
+Output only the complete Python code, fully formatted, ready to save as a .py file.
+"""
