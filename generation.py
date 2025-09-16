@@ -10,7 +10,7 @@ JSON_METADATA_PATH = "output/linear_regression_notes.json"
 MARKDOWN_PATH = "output/linear_regression_notes.md"
 IMAGES_FOLDER = "output/linear_regression_notes_images"
 PROMPT_FILE_PATH = "prompts/prompt.txt"
-OUTPUT_MANIM_FILE = "generated_linear_regression_animation.py"
+OUTPUT_MANIM_FILE = "generated_manim_code.py"
 
 def load_text(path):
     with open(path, "r", encoding="utf-8") as f:
