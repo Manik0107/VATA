@@ -14,24 +14,72 @@ load_dotenv()
 import subprocess
 
 def run_code_and_get_logs(code_file: str):
-    """Run code as a subprocess to capture full runtime errors including Manim."""
+    """Run Manim code as a subprocess to capture full runtime errors including scene rendering."""
     try:
+        # Run with manim command to actually execute the scene
+        # Specify the scene name to avoid interactive prompts
+        # Using -pql for preview quality and low resolution for faster testing
         result = subprocess.run(
-            ["python", code_file],
+            ["manim", "-pql", code_file, "IntroductionAnimation", "--disable_caching"],
             capture_output=True,
             text=True,
-            check=False  # Don't raise exception; we capture it manually
+            check=False,  # Don't raise exception; we capture it manually
+            timeout=60  # Add timeout to prevent hanging
         )
+        
+        # Filter out warnings from stderr to focus on real errors
+        stderr_text = result.stderr
+        error_lines = []
+        
+        # Split into lines and filter out known warnings
+        for line in stderr_text.split('\n'):
+            line = line.strip()
+            if not line:
+                continue
+                
+            # Skip common warnings that aren't actual errors
+            if any(warning in line for warning in [
+                "UserWarning: pkg_resources is deprecated",
+                "WARNING: All log messages before absl::InitializeLog()",
+                "ALTS creds ignored",
+                "import pkg_resources",  # This line comes from the warning
+                "manim_voiceover/__init__.py",  # Skip warning location lines
+                "INFO     Caching disabled",  # Skip caching info
+                "INFO     Animation",  # Skip animation progress info
+                "INFO     Automatically converted"  # Skip audio conversion info
+            ]):
+                continue
+                
+            # Only include lines that look like actual errors
+            if any(error_indicator in line for error_indicator in [
+                "Error", "Exception", "Traceback", "File \"", 
+                "NameError", "TypeError", "ValueError", "ImportError",
+                "AttributeError", "SyntaxError", "IndentationError",
+                "KeyError", "IndexError", "RuntimeError"
+            ]):
+                error_lines.append(line)
+        
+        errors = '\n'.join(error_lines)
+        
         return {
             "stdout": result.stdout,
             "stderr": result.stderr,
-            "errors": result.stderr  # Manim errors show up in stderr
+            "errors": errors if errors.strip() else "",
+            "return_code": result.returncode  # Add return code to check success
+        }
+    except subprocess.TimeoutExpired:
+        return {
+            "stdout": "",
+            "stderr": "Timeout: Process took longer than 60 seconds",
+            "errors": "Timeout: Process took longer than 60 seconds",
+            "return_code": 1
         }
     except Exception as e:
         return {
             "stdout": "",
             "stderr": str(e),
-            "errors": str(e)
+            "errors": str(e),
+            "return_code": 1
         }
 
 def clean_code(raw_code: str) -> str:
@@ -79,9 +127,10 @@ def save_code(new_code: str):
 MAX_RETRIES = 10
 for attempt in range(MAX_RETRIES):
     code = load_code()
-    logs = run_code_and_get_logs(code)
+    logs = run_code_and_get_logs(CODE_FILE)
 
-    if not logs["errors"]:  # ✅ Success
+    # Success if no real errors and return code is 0 (success)
+    if not logs["errors"] and logs.get("return_code", 1) == 0:
         print("✅ Code executed successfully with Manim render!")
         print("OUTPUT:\n", logs["stdout"])
         break

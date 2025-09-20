@@ -1,15 +1,17 @@
 #!/usr/bin/env python3
 """
-Manim Code Generator with Latest Google GenAI SDK
-Compatible with Manim 0.19.0 and Google GenAI 1.19.0 (2025)
+Professional Manim Code Generator with Latest Google GenAI SDK
+Compatible with Manim 0.19.0+ and Google GenAI 1.19.0 (2025)
+Generates high-quality educational videos with synchronized narration
 """
 
 import os
 import re
 import json
 from typing import List, Dict, Optional
+from pathlib import Path
 
-# NEW: Updated imports for Google GenAI SDK (replaces google-generativeai)
+# Updated imports for Google GenAI SDK
 from google import genai
 from google.genai import types
 
@@ -18,85 +20,185 @@ from narrative_parser import AdvancedNarrativeParser, AnimationSection
 
 class ManimCodeGenerator:
     """
-    Advanced Manim code generator using latest Google GenAI SDK
+    Advanced Manim code generator for professional educational videos
     """
 
     def __init__(self, api_key: str):
-        # NEW: Updated client initialization for Google GenAI SDK
+        # Initialize Google GenAI client
         self.client = genai.Client(api_key=api_key)
         self.parser = AdvancedNarrativeParser()
 
-        # Template for the latest Manim 0.19.0 syntax
+        # Professional template for Manim 0.19.0+
         self.base_template = '''from manim import *
 from manim_voiceover import VoiceoverScene
 from manim_voiceover.services.gtts import GTTSService
 import numpy as np
 import os
 from pathlib import Path
+import uuid
+import time
 
-class NarrativeEducationalAnimation(VoiceoverScene):
-    def construct(self):
-        # Initialize TTS service (compatible with Manim Voiceover 0.3.7)
-        self.set_speech_service(GTTSService())
+# Enhanced audio timing management to prevent overlapping
+class TimingAwareGTTSService(GTTSService):
+    def __init__(self, lang="en", tld="com"):
+        super().__init__(lang=lang, tld=tld)
+        self.segment_count = 0
+        self.total_duration = 0.0
+
+    def get_audio(self, text):
+        # Add timing tracking
+        words = len(text.split())
+        estimated_duration = max(words * 0.4, 1.5)  # Estimate: ~2.5 words/second
+        self.total_duration += estimated_duration
+        self.segment_count += 1
         
-        # Execute narrative sections in sequence
+        print(f"🎵 Generating audio segment {self.segment_count} (est. {estimated_duration:.1f}s)")
+        return super().get_audio(text)
+
+class {class_name}(VoiceoverScene):
+    def construct(self):
+        # Initialize enhanced TTS service with timing awareness
+        self.set_speech_service(TimingAwareGTTSService())
+        
+        # Set scene background
+        self.camera.background_color = "#0d1117"  # Dark background for professional look
+        
+        # Execute all sections with proper timing
 {method_calls}
         
+        # Final pause
         self.wait(2)
+
+    def safe_clear_and_transition(self, transition_time=0.5):
+        """Safe scene clearing with audio timing consideration"""
+        if self.mobjects:
+            self.play(FadeOut(*self.mobjects), run_time=transition_time)
+        self.wait(0.3)  # Buffer for audio cleanup
+        self.clear()
+
+    def create_professional_title(self, title_text, subtitle="", font_size=56):
+        """Create professional 3Blue1Brown style titles"""
+        title = Text(title_text, font_size=font_size, color="#58a6ff", weight=BOLD)
+        title.move_to(UP * 1.2)
+        
+        elements = [title]
+        if subtitle:
+            sub = Text(subtitle, font_size=font_size//2, color="#7d8590")
+            sub.move_to(DOWN * 0.3)
+            elements.append(sub)
+        
+        underline = Line(LEFT * 3, RIGHT * 3, color="#58a6ff", stroke_width=4)
+        underline.next_to(title, DOWN, buff=0.5)
+        elements.append(underline)
+        
+        return VGroup(*elements)
+
 {section_methods}
-    
+
     def load_image_safe(self, image_path, scale=0.5, position=RIGHT*3):
-        \"\"\"Safely load images with fallback for missing files\"\"\"
+        """Safely load images with fallback for missing files"""
         try:
-            # Handle both absolute and relative paths
             if not os.path.isabs(image_path):
-                image_path = os.path.join(os.getcwd(), image_path)
+                image_path = Path(os.getcwd()) / image_path
             
-            img = ImageMobject(image_path)
+            img = ImageMobject(str(image_path))
             img.scale(scale)
             img.move_to(position)
             return img
         except Exception as e:
-            print(f\"Warning: Could not load image {{image_path}}. Error: {{e}}\")
-            # Fallback placeholder
-            placeholder = Rectangle(width=2, height=1.5, color=GREY_B)
+            print(f"Warning: Could not load image {{image_path}}. Error: {{e}}")
+            placeholder = Rectangle(width=2.5, height=1.8, color=GREY_B, fill_opacity=0.3)
             placeholder.move_to(position)
-            text = Text(\"Image\\nUnavailable\", font_size=20, color=WHITE)
+            text = Text("Image\\nUnavailable", font_size=18, color=WHITE)
             text.move_to(position)
             return Group(placeholder, text)
     
-    def create_title_animation(self, title_text, subtitle_text=\"\"):
-        \"\"\"Create engaging title sequence\"\"\"
-        title = Text(title_text, font_size=72, color=BLUE, weight=BOLD)
-        title.move_to(UP * 0.5)
+    def create_title_sequence(self, title_text, subtitle_text=""):
+        """Create professional title sequence"""
+        # Main title
+        title = Text(title_text, font_size=56, color="#58a6ff", weight=BOLD)
+        title.move_to(UP * 1.2)
         
+        # Subtitle if provided
         if subtitle_text:
-            subtitle = Text(subtitle_text, font_size=36, color=GREY_A)
-            subtitle.move_to(DOWN * 0.5)
+            subtitle = Text(subtitle_text, font_size=32, color="#7d8590")
+            subtitle.move_to(DOWN * 0.3)
             title_group = VGroup(title, subtitle)
         else:
             title_group = VGroup(title)
         
-        return title_group
-    
-    def create_equation_animation(self, equation_tex, build_step_by_step=True):
-        \"\"\"Create mathematical equation animations\"\"\"
-        equation = MathTex(equation_tex, font_size=48, color=WHITE)
-        equation.move_to(ORIGIN)
+        # Decorative elements
+        underline = Line(LEFT * 3, RIGHT * 3, color="#58a6ff", stroke_width=4)
+        underline.next_to(title_group, DOWN, buff=0.5)
         
-        if build_step_by_step and len(equation) > 1:
-            # Build equation part by part
-            return [equation[i] for i in range(len(equation))]
-        else:
-            return [equation]
+        return VGroup(title_group, underline)
+    
+    def create_section_header(self, text, color="#ffa657"):
+        """Create consistent section headers"""
+        header = Text(text, font_size=40, color=color, weight=BOLD)
+        header.to_edge(UP, buff=1)
+        
+        separator = Line(LEFT * 6, RIGHT * 6, color=color, stroke_width=2)
+        separator.next_to(header, DOWN, buff=0.3)
+        
+        return VGroup(header, separator)
+    
+    def create_formula_breakdown(self, formula_tex, explanations=None):
+        """Create step-by-step formula explanation"""
+        formula = MathTex(formula_tex, font_size=48, color=WHITE)
+        formula.move_to(ORIGIN)
+        
+        if explanations:
+            explanation_group = VGroup()
+            for i, explanation in enumerate(explanations):
+                exp_text = Text(explanation, font_size=24, color="#7d8590")
+                exp_text.next_to(formula, DOWN, buff=0.5 + i * 0.4)
+                explanation_group.add(exp_text)
+            
+            return VGroup(formula, explanation_group)
+        
+        return formula
+    
+    def create_graph_with_axes(self, x_range=[-5, 5], y_range=[-5, 5], 
+                             x_length=8, y_length=6, axis_config=None):
+        """Create professional-looking axes"""
+        if axis_config is None:
+            axis_config = {{"color": WHITE, "stroke_width": 2}}
+        
+        axes = Axes(
+            x_range=x_range,
+            y_range=y_range,
+            x_length=x_length,
+            y_length=y_length,
+            axis_config=axis_config
+        )
+        
+        # Add labels
+        x_label = axes.get_x_axis_label("x", edge=RIGHT, direction=RIGHT, buff=0.3)
+        y_label = axes.get_y_axis_label("y", edge=UP, direction=UP, buff=0.3)
+        
+        return VGroup(axes, x_label, y_label)
+    
+    def clear_scene_smart(self):
+        """Clear scene while preserving important elements"""
+        # Remove all mobjects except camera
+        if self.mobjects:
+            self.play(FadeOut(*self.mobjects), run_time=0.5)
+    
+    def highlight_text_part(self, text_obj, part_indices, color="#ffa657"):
+        """Highlight specific parts of text"""
+        if hasattr(text_obj, '__getitem__') and len(text_obj) > max(part_indices):
+            highlighted_parts = VGroup(*[text_obj[i] for i in part_indices])
+            return Indicate(highlighted_parts, color=color)
+        return FadeIn(text_obj)  # Fallback
 '''
 
     def generate_manim_code(self, narrative_script: str, images_folder: str = "",
                           metadata: Optional[Dict] = None) -> str:
         """
-        Generate complete Manim code from narrative script
+        Generate complete professional Manim code from narrative script
         """
-        print("🚀 Starting Manim code generation with advanced parser...")
+        print("🚀 Starting professional Manim code generation...")
         
         # Parse narrative script
         parsed_data = self.parser.parse_narrative_script(narrative_script)
@@ -107,402 +209,490 @@ class NarrativeEducationalAnimation(VoiceoverScene):
         # Get available images
         available_images = self._get_available_images(images_folder)
         
-        # Create optimized prompt for latest APIs
-        prompt = self._create_advanced_prompt(sections, available_images, metadata)
+        # Determine topic and class name from first section
+        topic = sections[0].title if sections else "Educational"
+        class_name = self._generate_class_name(topic, metadata)
         
-        print("🤖 Generating code with Gemini 2.0...")
+        # Create comprehensive prompt
+        prompt = self._create_professional_prompt(sections, available_images, metadata, class_name)
         
-        generated_code = ""
+        print("🤖 Generating code with Gemini 2.0 Flash...")
+        
         try:
-            # Robust call to generate_content
-            # Using contents as a list of dictionaries as per Google GenAI SDK 1.19.0 examples
             response = self.client.models.generate_content(
-            model="gemini-2.0-flash-exp",
-            contents=[{"role": "user", "parts": [{"text": prompt}]}],
-            config=types.GenerateContentConfig( # Use generation_config
-                    temperature=0.1,  # Lower for more consistent code
+                model="gemini-2.0-flash-exp",
+                contents=[{"role": "user", "parts": [{"text": prompt}]}],
+                config=types.GenerateContentConfig(
+                    temperature=0.2,  # Lower for more consistent, professional code
                     max_output_tokens=8192,
                     top_k=40,
                     top_p=0.9,
                 ),
             )
             
-            if response.candidates:
+            if response.candidates and response.candidates[0].content.parts:
                 generated_code = response.candidates[0].content.parts[0].text
-                print("✅ Successfully generated Manim code")
+                print("✅ Successfully generated professional Manim code")
             else:
-                print("⚠️ Gemini 2.0 returned no candidates. Falling back to template.")
-                generated_code = self._generate_fallback_code(sections, available_images)
+                print("⚠️ Gemini returned no content. Using enhanced fallback.")
+                generated_code = self._generate_enhanced_fallback(sections, available_images, class_name)
             
         except Exception as e:
-            print(f"❌ Error generating code with Gemini 2.0: {e}")
-            # Fallback to template-based generation
-            generated_code = self._generate_fallback_code(sections, available_images)
-            print("🔄 Used fallback code generation")
+            print(f"❌ Error with Gemini: {e}")
+            generated_code = self._generate_enhanced_fallback(sections, available_images, class_name)
+            print("🔄 Using enhanced fallback code generation")
         
-        # Extract and clean the code
-        final_code = self._extract_clean_code(generated_code)
+        # Clean and validate the generated code
+        final_code = self._extract_and_clean_code(generated_code)
+        final_code = self._validate_and_enhance_code(final_code, class_name)
         
-        # Validate and fix common issues
-        final_code = self._validate_and_fix_code(final_code)
-        
+        print("✨ Professional Manim code generation complete!")
         return final_code
 
-    def _create_advanced_prompt(self, sections: List[AnimationSection], available_images: List[str], metadata: Optional[Dict] = None) -> str:
-        """Create advanced prompt for latest Manim and AI capabilities"""
-        prompt = f"""# MANIM 0.19.0 EDUCATIONAL ANIMATION GENERATOR
+    def _generate_class_name(self, topic: str, metadata: Optional[Dict] = None) -> str:
+        """Generate appropriate class name from topic"""
+        # Clean topic for class name
+        clean_topic = re.sub(r'[^a-zA-Z0-9\s]', '', topic)
+        words = clean_topic.split()
+        
+        # Create CamelCase class name
+        if words:
+            class_name = ''.join(word.capitalize() for word in words[:3])  # Limit to 3 words
+            class_name += "Animation"
+        else:
+            class_name = "EducationalAnimation"
+        
+        return class_name
 
-# CRITICAL API SAFETY INSTRUCTION
-# Never use attributes or methods that do not exist in the official Manim documentation or API.
-# For example, do NOT use 'line.point_from_function' or similar non-existent attributes on Manim objects.
-# Always use documented and supported Manim methods and properties, such as 'axes.c2p(x, y)', 'get_center()', 'get_start()', 'get_end()', etc.
-# If you need a point on a line generated by a function, always calculate it using the function and axes, e.g. axes.c2p(x, f(x)).
-# If unsure, refer to the official Manim documentation for the correct usage.
-#
-# CRITICAL INDEX SAFETY INSTRUCTION
-# Never access an index of a MathTex, VGroup, or any list-like object unless you have checked its length and the index is valid.
-# For example, before using equation[0][6], always check that equation[0] has at least 7 elements.
-# If unsure, use len() to verify the size before accessing, and handle cases where the index may be out of range gracefully.
+    def _create_professional_prompt(self, sections: List[AnimationSection], 
+                                  available_images: List[str], 
+                                  metadata: Optional[Dict], 
+                                  class_name: str) -> str:
+        """Create comprehensive prompt for professional educational video generation"""
+        
+        prompt = f"""# PROFESSIONAL EDUCATIONAL VIDEO GENERATOR - MANIM 0.19.0+
 
 ## MISSION
-Generate complete, executable Python code using Manim 0.19.0 and Manim Voiceover 0.3.7 that creates a professional educational video from the parsed narrative structure.
+Generate a complete, executable, professional-quality educational video using Manim 0.19.0+ that:
+- Creates visually stunning, child-friendly explanations
+- Uses perfect voiceover synchronization
+- Adapts dynamically to any educational topic
+- Maintains professional visual standards
+- Provides in-depth, step-by-step explanations
 
-## CRITICAL REQUIREMENTS - LATEST 2025 SYNTAX
+## CRITICAL REQUIREMENTS
 
-### 1. Base Structure (MANDATORY)
+### 1. PROFESSIONAL VISUAL STANDARDS
+- **No overlapping objects**: Always clear previous content with `self.clear_scene_smart()`
+- **Proper spacing**: Use consistent positioning with `to_edge()`, `move_to()`, `next_to()`
+- **Color scheme**: Use professional colors (#58a6ff for titles, #ffa657 for highlights, #7d8590 for subtitles)
+- **Smooth animations**: Use FadeIn, FadeOut, Write, Transform, Create with appropriate timing
+- **Clean layout**: Center important content, align text properly
+
+### 2. MANDATORY CLASS STRUCTURE & IMPORTS
+**CRITICAL IMPORT RESTRICTIONS:**
+- NEVER use `from manim.utils.file_system import find_file`
+- NEVER use `from manim.utils.file_ops import find_file` 
+- NEVER use any `manim.utils.file_system` imports
+- NEVER use any from manim.utils.file_writing import open_file as open_media_file
+- Use ONLY standard Python file operations: `os.path`, `pathlib.Path`
+
+
+### 3. IN-DEPTH EXPLANATIONS
+- **Formula breakdowns**: Show each variable separately with explanations
+- **Step-by-step reveals**: Build complex concepts progressively
+- **Visual annotations**: Use arrows, highlights, and callouts
+- **Interactive elements**: Zoom, focus, and emphasize important parts
+
+### 4. PERFECT SYNCHRONIZATION (CRITICAL - NO OVERLAPPING)
 ```python
-from manim import *
-from manim_voiceover import VoiceoverScene
-from manim_voiceover.services.gtts import GTTSService
-import numpy as np
-import os
-from pathlib import Path
+with self.voiceover(text="Your narration text here") as tracker:
+    # ALWAYS use fallback duration to prevent None errors
+    run_time_val = tracker.duration if tracker.duration is not None else 2.0
+    
+    # Animation that matches the narration
+    self.play(Create(object), run_time=run_time_val)
+    
+    # NEVER add self.wait() inside voiceover context!
+    # This causes audio overlapping!
 
-class NarrativeEducationalAnimation(VoiceoverScene):
+# Add buffer OUTSIDE voiceover context
+self.wait(0.3)  # Short pause before next segment
+```
+
+### 5. TIMING RULES (ABSOLUTELY CRITICAL)
+- **NEVER** use `self.wait()` inside `with self.voiceover()` context
+- **ALWAYS** add buffers between segments outside voiceover context
+- **ALWAYS** use fallback duration: `tracker.duration if tracker.duration is not None else 2.0`
+- **ALWAYS** call `self.safe_clear_and_transition()` between sections
+
+### 6. MANDATORY CLASS STRUCTURE
+```python
+class {class_name}(VoiceoverScene):
     def construct(self):
         self.set_speech_service(GTTSService())
-        # Call section methods here
-        # Example: self.introduction_section()
+        self.camera.background_color = "#0d1117"
+        
+        # Call all section methods in order
+        self.animate_introduction()
+        # ... other sections
+        
         self.wait(2)
-
-    # Helper methods like load_image_safe, create_title_animation, create_equation_animation go here
+    
+    # All helper methods (provided in template)
+    # All section methods (implement based on narrative)
 ```
 
-### 2. Manim 0.19.0 API Updates (CRITICAL)
-- Use `Text(...)` for text, specifying `font_size`, `color`, `weight`.
-- Use `MathTex(r"...")` for mathematical content.
-- Use `ImageMobject(path).scale(factor).move_to(position)` for images.
-- Use `self.play(Create(obj), run_time=duration)` for animations.
-- Use `Group(...)` for grouping objects.
-- Colors: `BLUE`, `RED`, `GREEN`, `WHITE`, `GREY_A`, `GREY_B`, etc.
+## CONTENT TO IMPLEMENT
 
-### 3. Perfect Voiceover Synchronization
+### Available Images:
+{', '.join([os.path.basename(img) for img in available_images]) if available_images else 'None available'}
 
-```python
-with self.voiceover(text="Narration text here") as tracker:
-    animation = Create(circle)
-    self.play(animation, run_time=tracker.duration)
-# Crucially, if there's no animation or the animation is shorter than the voiceover,
-# ensure a self.wait(tracker.duration - animation_run_time) to sync.
-# Or, if animation is just a part of the voiceover, play it and let voiceover naturally progress.
-```
-Always synchronize animations to `tracker.duration`. If an animation completes before the voiceover, use `self.wait()` to fill the remaining time.
-
-### 4. Section Implementation
-Each narrative section MUST be implemented as a separate method within the `NarrativeEducationalAnimation` class. These methods should be called sequentially in the `construct` method.
+### Sections to implement:
 """
 
-        # Add section-specific instructions
+        # Add detailed section information
         for i, section in enumerate(sections, 1):
             prompt += f"""
 **Section {i}: {section.title}**
-- Method Name: `{section.method_name}`
-- Estimated Duration: ~{section.estimated_duration:.1f} seconds
-- Voiceover segments: {len(section.segments)}
-- Images to consider: {', '.join([os.path.basename(img) for img in section.images]) if section.images else 'None'}
-- Animation cues: {', '.join(section.animation_cues) if section.animation_cues else 'None'}
-- Mathematical content: {', '.join(section.mathematical_content) if section.mathematical_content else 'None'}
+- Method: `{section.method_name}()`  
+- Duration: ~{section.estimated_duration:.1f}s
+- Segments: {len(section.segments)}
+- Key visual elements: {', '.join(section.animation_cues) if section.animation_cues else 'None'}
+- Math content: {', '.join(section.mathematical_content) if section.mathematical_content else 'None'}
+- Images: {', '.join([os.path.basename(img) for img in section.images]) if section.images else 'None'}
 
-Voiceover text for this section (first 3 segments as example):
+Key narration points:
 """
-            for seg in section.segments[:3]:  # Show first 3 segments as example
-                prompt += f'- "{seg.text}"\n'
+            # Show first few segments as examples
+            for j, segment in enumerate(section.segments[:3]):
+                prompt += f"  • \"{segment.text[:100]}...\"\n"
             
             if len(section.segments) > 3:
-                prompt += f"... and {len(section.segments) - 3} more segments\n"
+                prompt += f"  • ... and {len(section.segments) - 3} more segments\n"
 
         prompt += f"""
 
-### 5. Image Integration
-Available images (full paths): {', '.join(available_images) if available_images else 'None'}
+## IMPLEMENTATION GUIDELINES
 
-**MANDATORY HELPER METHOD TO INCLUDE AND USE:**
+### Visual Hierarchy:
+1. **Title sequences**: Use `create_title_sequence()` with professional styling
+2. **Section headers**: Use `create_section_header()` for consistency  
+3. **Main content**: Center stage with proper spacing
+4. **Supporting visuals**: Side panels or overlays
+
+### Mathematical Content:
+- Use `MathTex(r"...")` for all equations
+- Break down formulas step by step
+- Highlight variables as they're explained
+- Show practical applications
+
+### Graph/Chart Requirements:
+- Use `create_graph_with_axes()` for consistency
+- Animate data points appearing
+- Draw trend lines dynamically
+- Add proper labels and legends
+
+### Code Quality Requirements:
+- Every section MUST be a separate method
+- Use helper methods consistently
+- Handle edge cases (missing images, etc.)
+- Include proper error handling
+- Maintain professional naming conventions
+
+### Example Implementation Pattern:
 ```python
-    def load_image_safe(self, image_path, scale=0.5, position=RIGHT*3):
-        \"\"\"Safely load images with fallback for missing files\"\"\"
-        try:
-            if not os.path.isabs(image_path):
-                # Ensure the path is absolute or relative to the script's execution directory
-                # Manim typically runs from the project root where images might be stored.
-                # Use Path to handle cross-OS paths more robustly.
-                image_path = Path(os.getcwd()) / image_path
-            
-            img = ImageMobject(str(image_path)) # ImageMobject expects a string path
-            img.scale(scale)
-            img.move_to(position)
-            return img
-        except Exception as e:
-            print(f\"Warning: Could not load image {{image_path}}. Error: {{e}}\")
-            placeholder = Rectangle(width=2, height=1.5, color=GREY_B)
-            placeholder.move_to(position)
-            text = Text(\"Image\\nUnavailable\", font_size=20, color=WHITE)
-            text.move_to(position)
-            return Group(placeholder, text)
+def animate_core_concepts(self):
+    \"\"\"Explain core concepts with visuals\"\"\"
+    self.clear_scene_smart()
+    
+    # Section header
+    header = self.create_section_header("Core Concepts")
+    self.play(Write(header))
+    
+    # Main explanation with synchronized voiceover
+    with self.voiceover(text="First concept explanation...") as tracker:
+        concept_visual = Text("Key Concept", font_size=36)
+        self.play(FadeIn(concept_visual), run_time=tracker.duration)
+    
+    # Continue with more concepts...
 ```
 
-### 6. Educational Animation Patterns
+## OUTPUT REQUIREMENTS
 
-**For Introduction Sections:**
-- Create engaging title with `Text(..., font_size=72, color=BLUE)`
-- Add subtitle if needed using `Text(..., font_size=36, color=GREY_A)`
-- Use smooth `Write()` or `FadeIn()` animations.
+Generate ONLY the complete Python code that:
+✅ Implements ALL sections from the narrative
+✅ Uses perfect voiceover synchronization  
+✅ Follows Manim 0.19.0+ syntax exactly
+✅ Creates professional, engaging visuals
+✅ Adapts to the specific topic content
+✅ Includes all helper methods
+✅ Handles mathematical formulas properly
+✅ Manages scene transitions smoothly
 
-**For Concept Sections:**
-- Build content progressively using `Succession()` or `LaggedStart()`.
-- Use `MathTex()` for equations, revealing parts sequentially.
-- Introduce terms with `Text()` and `Create()`.
+Class name: `{class_name}`
 
-**For Mathematical Content:**
-- Use `MathTex(r"Y = a + bx")` syntax for equations.
-- Build equations piece by piece (`self.play(Write(eq[0]))`, `self.play(Transform(eq[0], eq[1]))`).
-- Add visual annotations like `Arrow` or `SurroundingRectangle`.
+**CRITICAL**: The code must be immediately executable with:
+`manim your_file.py {class_name} -pql --disable_caching`
 
-**For Examples:**
-- Create interactive demonstrations using `Animate()`.
-- Use `Indicate()` or `Flash()` for emphasis.
-- Show before/after comparisons with `Transform()`.
-
-### 7. MANDATORY OUTPUT FORMAT
-Generate ONLY the complete Python code. No explanations, no markdown blocks, just clean executable code that:
-- Implements ALL sections as methods.
-- Uses perfect voiceover synchronization for *every* voiceover block.
-- Integrates available images safely using `load_image_safe`.
-- Follows Manim 0.19.0 syntax exactly.
-- Creates engaging educational animations.
-- The main class name MUST be `NarrativeEducationalAnimation`.
-
-### 8. Overlap and Clarity Best Practices
-- For every new section or title in the same place as the previous object or animation, ALWAYS fade out or remove previous objects using self.play(FadeOut(*self.mobjects)).
-- Explicitly position titles, subtitles, and key visuals with .to_edge, .move_to, .next_to to avoid overlap.
-- Never stack multiple Write(Text(...)) animations for section headers at the same position.
-- Always ensure only one main title is visible at a time.
-
-The code must be immediately executable with: `manim your_file.py -pql --disable_caching`
-```python
-# Start your Python code here. DO NOT include ```python or ```
-# Make sure to include the load_image_safe helper method within the class.
-```
+Start your code with the imports. Do NOT use markdown code blocks.
 """
 
         return prompt
 
     def _get_available_images(self, images_folder: str) -> List[str]:
-        """Get list of available image files with their full paths"""
+        """Get list of available image files with full paths"""
         if not images_folder or not os.path.exists(images_folder):
-            print(f"Warning: Image folder '{images_folder}' not found or empty.")
             return []
         
         image_extensions = ('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.svg')
         images = []
         
-        for file in os.listdir(images_folder):
-            if file.lower().endswith(image_extensions):
-                images.append(os.path.join(images_folder, file))
+        try:
+            for file in os.listdir(images_folder):
+                if file.lower().endswith(image_extensions):
+                    images.append(os.path.join(images_folder, file))
+        except Exception as e:
+            print(f"Warning: Error reading images folder: {e}")
         
         return images
 
-    def _extract_clean_code(self, generated_text: str) -> str:
-        """
-        Extract clean Python code from LLM response, robustly handling markdown fences.
-        """
-        # Look for a Python code block (```python ... ```)
-        code_block_match = re.search(r'```python\n(.*?)```', generated_text, re.DOTALL)
-        if code_block_match:
-            return code_block_match.group(1).strip()
+    def _extract_and_clean_code(self, generated_text: str) -> str:
+        """Extract clean Python code from LLM response"""
+        # Remove markdown code blocks if present
+        code_block_pattern = r'```(?:python)?\s*(.*?)```'
+        code_match = re.search(code_block_pattern, generated_text, re.DOTALL)
         
-        # If no explicit code block, try to find the class definition
-        # This is less ideal but better than nothing
-        python_start = re.search(r'(from manim import|import manim|class\s+\w+\s*\(VoiceoverScene\):)', generated_text)
-        if python_start:
-            return generated_text[python_start.start():].strip()
+        if code_match:
+            return code_match.group(1).strip()
         
-        print("Warning: Could not find a clear Python code block. Returning raw text.")
+        # Look for class definition start
+        class_start = re.search(r'(from manim import|class\s+\w+.*VoiceoverScene)', generated_text)
+        if class_start:
+            return generated_text[class_start.start():].strip()
+        
+        # Return as-is if no clear structure found
         return generated_text.strip()
 
-    def _validate_and_fix_code(self, code: str) -> str:
-        """Validate and fix common code issues"""
-        fixes_applied = []
+    def _validate_and_enhance_code(self, code: str, class_name: str) -> str:
+        """Validate and enhance the generated code"""
+        enhancements = []
         
-        # Fix common import issues
-        if 'from manim import *' not in code:
-            code = 'from manim import *\n' + code
-            fixes_applied.append('Added missing manim import')
+        # Ensure proper imports
+        required_imports = [
+            'from manim import *',
+            'from manim_voiceover import VoiceoverScene',
+            'from manim_voiceover.services.gtts import GTTSService',
+            'import numpy as np',
+            'import os',
+            'from pathlib import Path'
+        ]
         
-        # Ensure VoiceoverScene import
-        if 'from manim_voiceover import VoiceoverScene' not in code:
-            code = code.replace(
-                'from manim import *',
-                'from manim import *\nfrom manim_voiceover import VoiceoverScene'
-            )
-            fixes_applied.append('Added VoiceoverScene import')
+        for imp in required_imports:
+            if imp not in code:
+                code = imp + '\n' + code
+                enhancements.append(f'Added missing import: {imp}')
         
-        # Fix GTTSService import if missing
-        if 'GTTSService' in code and 'from manim_voiceover.services.gtts import GTTSService' not in code:
-            code = code.replace(
-                'from manim_voiceover import VoiceoverScene',
-                'from manim_voiceover import VoiceoverScene\nfrom manim_voiceover.services.gtts import GTTSService'
-            )
-            fixes_applied.append('Added GTTSService import')
+        # Ensure proper class definition
+        if f'class {class_name}(VoiceoverScene):' not in code:
+            class_pattern = r'class\s+(\w+)\s*\([^)]*\):'
+            code = re.sub(class_pattern, f'class {class_name}(VoiceoverScene):', code)
+            enhancements.append(f'Fixed class name to {class_name}')
         
-        # Ensure proper class inheritance for the main animation class
-        # Only replace if it doesn't already inherit from VoiceoverScene
-        class_definition_match = re.search(r'class\s+(\w+)\s*\((\w+)\):', code)
-        if class_definition_match:
-            class_name = class_definition_match.group(1)
-            base_class = class_definition_match.group(2)
-            if base_class != "VoiceoverScene":
-                code = re.sub(r'class\s+' + re.escape(class_name) + r'\s*\(' + re.escape(base_class) + r'\):',
-                              r'class ' + class_name + r'(VoiceoverScene):', code)
-                fixes_applied.append(f'Fixed class {class_name} inheritance to VoiceoverScene')
-        else: # If no class definition found, add a default one
-            if "class NarrativeEducationalAnimation(VoiceoverScene):" not in code:
-                # Attempt to insert it after imports
-                insert_pos = code.find("import numpy as np") # A common import point
-                if insert_pos == -1: insert_pos = code.find("from manim import *") # Fallback to first import
-                if insert_pos != -1:
-                    code = code[:insert_pos] + self.base_template.split('class NarrativeEducationalAnimation(VoiceoverScene):')[0] + \
-                           'class NarrativeEducationalAnimation(VoiceoverScene):\n    ' + \
-                           code[insert_pos:]
-                    fixes_applied.append("Added default 'NarrativeEducationalAnimation' class definition.")
-
-
-        # Add TTS service setup if missing within construct and not already present
-        if 'def construct(self):' in code and 'self.set_speech_service' not in code:
-            # Check if set_speech_service exists but might be commented out or elsewhere
-            if not re.search(r'self\.set_speech_service\(GTTSService\(\)\)', code):
+        # Ensure TTS service setup
+        if 'self.set_speech_service(GTTSService())' not in code:
+            construct_pattern = r'def construct\(self\):\s*'
+            replacement = 'def construct(self):\n        self.set_speech_service(GTTSService())\n        '
+            code = re.sub(construct_pattern, replacement, code)
+            enhancements.append('Added TTS service setup')
+        
+        # Ensure background color
+        if 'self.camera.background_color' not in code:
+            service_line = 'self.set_speech_service(GTTSService())'
+            if service_line in code:
                 code = code.replace(
-                    'def construct(self):',
-                    'def construct(self):\n        self.set_speech_service(GTTSService())'
+                    service_line,
+                    service_line + '\n        self.camera.background_color = "#0d1117"'
                 )
-                fixes_applied.append('Added TTS service setup in construct method')
+                enhancements.append('Added professional background color')
         
-        # Ensure load_image_safe is present
-        if 'def load_image_safe(self, image_path, scale=0.5, position=RIGHT*3):' not in code:
-            # Extract load_image_safe from the base_template
-            load_image_safe_method = re.search(r'(    def load_image_safe\(self,.*?)    def create_title_animation\(self,', self.base_template, re.DOTALL)
-            if load_image_safe_method:
-                # Find where to insert it within the class
-                class_end_match = re.search(r'\n(    def [a-zA-Z_]+\(self,.*\):)', code, re.DOTALL) # Find first method to insert before
-                if class_end_match:
-                    insert_pos = class_end_match.start(1)
-                    code = code[:insert_pos] + load_image_safe_method.group(1) + code[insert_pos:]
-                    fixes_applied.append('Added missing load_image_safe helper method.')
-                else: # Fallback: append at the end of the class
-                    code += '\n' + load_image_safe_method.group(1)
-                    fixes_applied.append('Appended missing load_image_safe helper method.')
-
-        # Fix self.wait() after voiceovers in generated section methods (if fallback was used)
-        # This is more complex to generalize for LLM output, but for fallback:
-        # The prompt strongly suggests `run_time=tracker.duration` for `self.play`.
-        # For pure voiceover blocks without animation or short animations, LLM should add self.wait().
-        # This fix is more for the _fallback_code.
+        # Add helper methods if missing
+        if 'def load_image_safe(' not in code:
+            # Insert all helper methods before the last closing of the class
+            helper_methods = self._get_helper_methods()
+            # Find the last method and insert before the class ends
+            last_method = re.findall(r'\n    def \w+\([^)]*\):.*?(?=\n    def |\n\n|\Z)', code, re.DOTALL)
+            if last_method:
+                code += '\n' + helper_methods
+                enhancements.append('Added missing helper methods')
         
-        if fixes_applied:
-            print(f"🔧 Applied fixes: {', '.join(fixes_applied)}")
+        if enhancements:
+            print(f"🔧 Code enhancements applied: {', '.join(enhancements)}")
         
         return code
 
-    def _generate_fallback_code(self, sections: List[AnimationSection], available_images: List[str]) -> str:
-        """Generate robust fallback code if LLM fails"""
+    def _get_helper_methods(self) -> str:
+        """Get all helper methods as a string"""
+        return '''
+    def load_image_safe(self, image_path, scale=0.5, position=RIGHT*3):
+        """Safely load images with fallback for missing files"""
+        try:
+            if not os.path.isabs(image_path):
+                image_path = Path(os.getcwd()) / image_path
+            
+            img = ImageMobject(str(image_path))
+            img.scale(scale)
+            img.move_to(position)
+            return img
+        except Exception as e:
+            print(f"Warning: Could not load image {image_path}. Error: {e}")
+            placeholder = Rectangle(width=2.5, height=1.8, color=GREY_B, fill_opacity=0.3)
+            placeholder.move_to(position)
+            text = Text("Image\\nUnavailable", font_size=18, color=WHITE)
+            text.move_to(position)
+            return Group(placeholder, text)
+    
+    def create_title_sequence(self, title_text, subtitle_text=""):
+        """Create professional title sequence"""
+        title = Text(title_text, font_size=56, color="#58a6ff", weight=BOLD)
+        title.move_to(UP * 1.2)
+        
+        if subtitle_text:
+            subtitle = Text(subtitle_text, font_size=32, color="#7d8590")
+            subtitle.move_to(DOWN * 0.3)
+            title_group = VGroup(title, subtitle)
+        else:
+            title_group = VGroup(title)
+        
+        underline = Line(LEFT * 3, RIGHT * 3, color="#58a6ff", stroke_width=4)
+        underline.next_to(title_group, DOWN, buff=0.5)
+        
+        return VGroup(title_group, underline)
+    
+    def create_section_header(self, text, color="#ffa657"):
+        """Create consistent section headers"""
+        header = Text(text, font_size=40, color=color, weight=BOLD)
+        header.to_edge(UP, buff=1)
+        
+        separator = Line(LEFT * 6, RIGHT * 6, color=color, stroke_width=2)
+        separator.next_to(header, DOWN, buff=0.3)
+        
+        return VGroup(header, separator)
+    
+    def clear_scene_smart(self):
+        """Clear scene while preserving important elements"""
+        if self.mobjects:
+            self.play(FadeOut(*self.mobjects), run_time=0.5)
+'''
+
+    def _generate_enhanced_fallback(self, sections: List[AnimationSection], 
+                                  available_images: List[str], 
+                                  class_name: str) -> str:
+        """Generate enhanced fallback code with professional quality"""
+        
         method_calls = ""
         section_methods = ""
         
         for section in sections:
             method_calls += f"        self.{section.method_name}()\n"
             
-            # Generate basic method implementation for fallback
-            # Ensure proper voiceover sync for fallback as well
-            section_methods += f"""
+            # Generate professional section method
+            section_methods += f'''
     def {section.method_name}(self):
-        \"\"\"Animate: {section.title}\"\"\"
-        # Clear previous objects
-        self.play(FadeOut(*self.mobjects)) # Fade out everything visible
+        """Animate: {section.title}"""
+        self.clear_scene_smart()
         
-        section_title = Text("{section.title}", font_size=48, color=BLUE).to_edge(UP)
-        self.play(Write(section_title))
-
-        # Combine all segments for a single voiceover in fallback
-        full_narration_text = " ".join([seg.text for seg in section.segments])
-        if not full_narration_text:
-            full_narration_text = f"Content for {section.title} section."
-
-        with self.voiceover(text=full_narration_text) as tracker:
-            # Display primary content
-            content_objects = []
+        # Create section header
+        header = self.create_section_header("{section.title}")
+        self.play(Write(header), run_time=1)
+        self.wait(0.5)
+        
+        # Process narration segments with synchronized visuals
+'''
+            
+            # Add synchronized voiceover for each segment
+            for i, segment in enumerate(section.segments):
+                section_methods += f'''
+        # Segment {i + 1} - Enhanced timing to prevent overlapping
+        with self.voiceover(text="{segment.text}") as tracker:
+            content = Text(
+                "{segment.text[:50]}..." if len("{segment.text}") > 50 else "{segment.text}",
+                font_size=28,
+                color=WHITE
+            ).move_to(ORIGIN)
+            
+            # CRITICAL: Use proper timing without extra waits
+            run_time_val = tracker.duration if tracker.duration is not None else 2.0
+            if run_time_val > 2:
+                self.play(Write(content), run_time=min(2.0, run_time_val * 0.7))
+                # Calculate remaining time and use it for content display
+                remaining = max(0, run_time_val - 2.0)
+                if remaining > 0:
+                    self.wait(remaining)  # Only wait for remaining voiceover time
+            else:
+                self.play(FadeIn(content), run_time=run_time_val)
+            # NO additional wait() here - it causes overlapping!
+        
+        # Buffer OUTSIDE voiceover context to prevent overlapping
+        self.wait(0.3)  # Short buffer between segments
+        self.play(FadeOut(content), run_time=0.5)
+        self.wait(0.2)  # Additional cleanup time
+'''
             
             # Add images if available
-            if section.images:
-                # Use the first image from the section for simplicity in fallback
-                img_name = os.path.basename(section.images[0])
-                # Check against available_images for actual path
-                full_img_path = next((path for path in available_images if img_name in path), None)
-                if full_img_path:
-                    image_mobject = self.load_image_safe(full_img_path, scale=0.6, position=RIGHT*3)
-                    content_objects.append(image_mobject)
-                    self.play(FadeIn(image_mobject))
-
-            # Add simple text for description
-            description_text = Text(full_narration_text[:100] + "...", font_size=30).next_to(section_title, DOWN, buff=0.5).to_edge(LEFT)
-            content_objects.append(description_text)
-            self.play(Write(description_text), run_time=tracker.duration * 0.5) # Play animation for half duration
+            if section.images and available_images:
+                section_methods += '''
+        # Add relevant image if available
+        if True:  # Placeholder for image logic
+            image = self.load_image_safe("''' + available_images[0] + '''", scale=0.6)
+            self.play(FadeIn(image), run_time=1)
+            self.wait(1)
+            self.play(FadeOut(image), run_time=0.5)
+'''
             
-            # Ensure voiceover completes
-            self.wait(tracker.duration * 0.5) # Wait for remaining half duration
+            section_methods += '''
+        # Section transition with proper timing
+        self.safe_clear_and_transition(0.5)
+'''
 
-        self.wait(1) # Short pause between sections
-"""
-        
+        # Format the complete code
         return self.base_template.format(
+            class_name=class_name,
             method_calls=method_calls,
             section_methods=section_methods
         )
 
 
-# Usage example and testing
+# Test and validation
 if __name__ == "__main__":
-    # Test the generator
-    api_key = os.getenv("GOOGLE_API_KEY")
+    # Test with sample data
+    api_key = os.getenv("GOOGLE_API_KEY") or os.getenv("GEMINI_API_KEY")
     if not api_key:
-        print("❌ Please set GOOGLE_API_KEY environment variable")
+        print("❌ Please set GOOGLE_API_KEY or GEMINI_API_KEY environment variable")
         exit(1)
     
-    # Use your real images folder
-    images_folder = "output/linear_regression_notes_images"
-
     generator = ManimCodeGenerator(api_key)
     
-    sample_script = """
+    sample_narrative = '''
 ## Introduction
-Welcome to linear regression! [MEDIUM PAUSE] This powerful tool helps us understand relationships in data.
+Welcome to our lesson on linear regression! This powerful statistical method helps us understand relationships between variables.
 
-## Core Concepts  
-Linear regression uses the equation Y = a + bx. [DISPLAY IMAGE: equation.png]
-This equation is fundamental to understanding linear relationships.
-"""
+## Mathematical Foundation  
+Linear regression uses the equation y = mx + b, where y is the dependent variable, x is independent, m is slope, and b is the y-intercept.
+
+## Practical Application
+Let's see how we can use this to predict house prices based on size.
+'''
     
-    code = generator.generate_manim_code(sample_script, images_folder=images_folder)
+    print("🧪 Testing code generation...")
+    generated_code = generator.generate_manim_code(
+        narrative_script=sample_narrative,
+        images_folder="images"
+    )
+    
     print("\n" + "="*80)
-    print("Generated code preview:")
+    print("📝 GENERATED CODE PREVIEW:")
     print("="*80)
-    print(code)
+    print(generated_code[:1500] + "\n... (truncated)")
     print("="*80)
+    print("✅ Test completed successfully!")
