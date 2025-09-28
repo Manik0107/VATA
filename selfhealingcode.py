@@ -116,7 +116,7 @@ Here is the code and the runtime logs:"""),
 
 correction_chain = correction_prompt | llm
 
-CODE_FILE = "generated_manim_code.py"
+CODE_FILE = "generated_animation_dspy.py"
 
 def load_code():
     return Path(CODE_FILE).read_text()

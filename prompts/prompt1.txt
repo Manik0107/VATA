@@ -1,53 +1,709 @@
-## Prompt for Educational Animation Script on Linear Regression
+PRIMARY OUTPUT DIRECTIVE
+Generate ONLY executable Python code for Manim Community v0.19+.
 
-You are an AI scriptwriter specializing in educational animation narratives. Your task is to generate a comprehensive, engaging, and well-structured script for a 5-minute educational video based on the provided lesson content, user query, and metadata. The output must be plain text, ready for voiceover and animation synchronization, without any code.
+ABSOLUTE FORBIDDEN ELEMENTS - ZERO TOLERANCE:
+❌ ```python or ``` (markdown code fences)
+❌ [[ ## reasoning ## ]] (section headers)  
+❌ # ANALYSIS or ## EXPLANATION (header sections)
+❌ Any text that isn't executable Python code
+❌ JSON unless valid Python dictionary syntax
+❌ Markdown formatting, explanations, or wrappers
+❌ Comments outside of Python code context
+❌ vgroup.clear() - CRITICAL ERROR: VGroup has no clear() method!
+❌ self.label_group.clear() - VGroup AttributeError guaranteed!
+❌ ANY_VARIABLE.clear() if it's a VGroup - causes instant failure!
+❌ \max(lpha x, x) - LaTeX ERROR: Incomplete \alpha causes compilation failure!
+❌ pass statements in method bodies - FORBIDDEN: Every method needs full implementation!
 
-### Input Information:
+MANDATORY OUTPUT FORMAT:
+✅ First line: from manim import *
+✅ Last line: Complete class definition closure
+✅ ONLY executable Python code between
+✅ Ready-to-run without modifications
 
-- **Query:** {query}
-- **Document Content (Markdown):** {document_content}
-- **Metadata (JSON - includes image details, keywords, sections):** {metadata}
+CRITICAL CONSTRAINTS
+Zero explanations, zero markdown, zero section headers.
+Code must start with from manim import * and end with a fully closed class definition.
+Every generated file must be ready-to-run and error-free for Manim v0.19+.
 
-### Output Requirements:
+ADAPTIVE CORE PRINCIPLES
+Use safe fallbacks for any uncertain code sections (self-healing).
 
-1. **Structure:** Divide the narrative into the following logical sections. Each section should have a clear heading.
-    - Introduction
-    - Core Concepts
-    - Mathematical Derivations (if applicable)
-    - Examples (if applicable)
-    - Applications (if applicable)
-    - Conclusion
+Graceful degradation preferred for complex features.
 
-2. **Narration:**
-    - For each section, provide clear, concise, and engaging narration text.
-    - Narration should be suitable for a general audience (e.g., high school to early college level) and conversational.
-    - Aim for a total script length that translates to 15-20 minutes of speaking time (approximately 1800-2400 words, but focus on content quality and pacing).
+Guarantee future-proof compatibility: only use version-agnostic and modern patterns.
 
-3. **Timing Cues:**
-    - After each significant paragraph or topic within a section, suggest a pacing cue: `[SHORT PAUSE]`, `[MEDIUM PAUSE]`, or `[LONG PAUSE]`. Use these to guide the rhythm of the narration and animation.
+Always include helper methods if referenced; no undefined names.
 
-4. **Image/Diagram Suggestions:**
-    - Where appropriate, suggest displaying specific images or diagrams referenced in the `metadata`. Use the format: `[DISPLAY IMAGE: <image_name>]` or `[DISPLAY DIAGRAM: <diagram_name>]`. Refer to the `image_name` or `keywords` from the metadata JSON.
+Never truncate code mid-block; generate minimal stubs or complete any current method.
 
-5. **Transitions:**
-    - Include smooth, logical transitions between sections to maintain flow.
+Maximum class/function length: 500 lines.
 
-6. **Constraints:**
-    - **NO CODE:** Absolutely no Python, Manim, or any other programming code in the output.
-    - Strictly plain text narrative.
+Scene runtime: at least 150 seconds (include self.wait() as needed).
 
-### Example Section Format:
+REQUIRED IMPORTS AND COLORS
+from manim import *
+import numpy as np
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
+from manim import BLUE, RED, GREEN, GOLD, YELLOW, WHITE, GREY_B, GREY_C, PURPLE, PINK, ORANGE, TEAL, BLACK
 
-## Introduction
-(Narration text...) [MEDIUM PAUSE]
-(More narration...) [DISPLAY IMAGE: introduction_diagram.png] [SHORT PAUSE]
-(Concluding intro thoughts...) [LONG PAUSE]
+SAFETY HELPERS (always included - FULL IMPLEMENTATIONS)
+def to3(p):
+    p = np.array(p, dtype=float).reshape(-1)
+    if p.shape[0] == 2: return np.array([p[0], p[1], 0.0])
+    if p.shape[0] == 3: return p.astype(float)
+    return np.array([p[0], p[1], 0.0]) if len(p) >= 2 else np.array([0.0, 0.0, 0.0])
 
-## Core Concepts
-(Narration text for first concept...) [MEDIUM PAUSE]
-(Elaboration on concept...) [DISPLAY DIAGRAM: core_concept_chart.svg] [SHORT PAUSE]
-(Transition to next concept...) [MEDIUM PAUSE]
+def to3Nx(points):
+    arr = np.array(points, dtype=float)
+    if arr.ndim == 1: return to3(arr).reshape(1, 3)
+    if arr.ndim == 2:
+        if arr.shape[1] >= 2:
+            if arr.shape[1] == 2:
+                return np.hstack([arr, np.zeros((arr.shape[0], 1))])
+            return arr[:, :3] if arr.shape[1] >= 3 else arr
+    return np.array([[0.0, 0.0, 0.0]])
 
----
+def safe_color(c, fallback=BLUE):
+    valid_colors = [BLUE, RED, GREEN, GOLD, YELLOW, WHITE, GREY_B, GREY_C, PURPLE, PINK, ORANGE, TEAL, BLACK]
+    if c in valid_colors: return c
+    if isinstance(c, (tuple, list)) and len(c) >= 3: return tuple(float(v) for v in c[:3])
+    return fallback
 
-Begin generating the narrative script now based on the provided inputs.
+def safe_position_above(obj, distance=1.5):
+    """Safe positioning above an object - v0.19+ compatible"""
+    return obj.get_center() + UP * distance
+
+def safe_position_below(obj, distance=1.5):
+    """Safe positioning below an object - v0.19+ compatible"""
+    return obj.get_center() + DOWN * distance
+
+def safe_position_left(obj, distance=2):
+    """Safe positioning to the left of an object - v0.19+ compatible"""
+    return obj.get_center() + LEFT * distance
+
+def safe_position_right(obj, distance=2):
+    """Safe positioning to the right of an object - v0.19+ compatible"""
+    return obj.get_center() + RIGHT * distance
+
+def create_text_around_object(text_content, obj, direction="above", font_size=20):
+    """Create text positioned around an object safely - v0.19+ compatible"""
+    text_obj = Text(text_content, font_size=font_size)
+    if direction == "above":
+        text_obj.next_to(obj, UP, buff=0.5)
+    elif direction == "below":
+        text_obj.next_to(obj, DOWN, buff=0.5)
+    elif direction == "left":
+        text_obj.next_to(obj, LEFT, buff=0.5)
+    elif direction == "right":
+        text_obj.next_to(obj, RIGHT, buff=0.5)
+    else:
+        text_obj.move_to(obj.get_center() + UP * 1.5)
+    return text_obj
+
+def safe_create_animation(obj):
+    try:
+        return Create(obj)
+    except:
+        return FadeIn(obj)  # Fallback
+
+def load_image_safe(self, image_path, scale=0.5, position=RIGHT*3):
+    try:
+        img = ImageMobject(image_path)
+        img.scale(scale)
+        img.move_to(position)
+        return img
+    except Exception as e:
+        print(f"Warning: Could not load image {image_path}. Error: {e}. Using placeholder.")
+        placeholder = Rectangle(width=2, height=1.5, color=GREY_B).move_to(position)
+        text = Text("Image", font_size=24).move_to(position)
+        return Group(placeholder, text)
+
+def safe_axes_creation(self, x_range, y_range, **kwargs):
+    try:
+        axes = Axes(x_range=x_range, y_range=y_range, **kwargs)
+        axes.move_to(ORIGIN)
+        return axes
+    except TypeError:
+        axes = Axes(x_range=x_range, y_range=y_range)
+        axes.move_to(ORIGIN)
+        return axes
+    except Exception as e:
+        print(f"Error creating axes, using generic fallback: {e}")
+        axes = Axes()
+        axes.move_to(ORIGIN)
+        return axes
+
+def create_safe_scatter(self, x_data, y_data, color=YELLOW):
+    try:
+        x_arr = np.array(x_data, dtype=float)
+        y_arr = np.array(y_data, dtype=float)
+        points = to3Nx(np.column_stack([x_arr, y_arr]))
+        return VGroup(*[Dot(point=p, color=safe_color(color), radius=0.04) for p in points])
+    except:
+        return VGroup(*[Dot(np.array([i, i, 0]), color=safe_color(color)) for i in range(3)])
+
+def create_safe_line(self, axes, slope, intercept, color=GREEN):
+    try:
+        line = axes.plot(lambda x: slope*x + intercept, color=safe_color(color))
+        return line
+    except:
+        p1 = to3([axes.x_range[0], slope*axes.x_range[0] + intercept])
+        p2 = to3([axes.x_range[1], slope*axes.x_range[1] + intercept])
+        return Line(p1, p2, color=safe_color(color))
+
+def position_text_around_object(self, obj, text_content, direction="above"):
+    text_obj = Text(text_content, font_size=20)
+    if direction == "above":
+        text_obj.next_to(obj, UP, buff=0.5)
+    elif direction == "below":
+        text_obj.next_to(obj, DOWN, buff=0.5)
+    elif direction == "left":
+        text_obj.next_to(obj, LEFT, buff=0.5)
+    elif direction == "right":
+        text_obj.next_to(obj, RIGHT, buff=0.5)
+    return text_obj
+
+UNIVERSAL LABELING SYSTEM - MANDATORY CORRECT TEMPLATE
+class UniversalLabelingSystem:
+    def __init__(self, scene):
+        self.scene = scene
+        self.label_group = VGroup()
+    
+    def clear_labels(self):
+        """CORRECT way to clear labels - NEVER use .clear()"""
+        # ❌ NEVER: self.label_group.clear()  
+        # ✅ ALWAYS use this exact pattern:
+        for mobject in list(self.label_group.submobjects):
+            self.label_group.remove(mobject)
+
+MANIM API COMPLIANCE AND POSITIONING
+Use only modern Manim positioning (get_center, next_to, constants like UP, DOWN, etc.).
+
+Never use deprecated methods (get_above, get_below).
+
+Use get_axis_labels() for axes, never add_coordinate_labels().
+
+ANIMATION RULES
+Use Create, FadeIn, Transform, ReplacementTransform, Indicate, Flash.
+
+Never pass multiple objects directly to Create()—use VGroup or single objects.
+
+Table construction: use element_to_mobject to convert strings to Text.
+
+VGROUP BEST PRACTICES - CRITICAL ERROR PREVENTION
+VGROUP METHOD CORRECTIONS  
+🚨 CRITICAL: VGroup has NO .clear() method - NEVER use ANY form of .clear()
+❌ FORBIDDEN PATTERNS:
+vgroup.clear()  # AttributeError: VGroup object has no attribute 'clear'
+self.label_group.clear()  # NEVER use this in UniversalLabelingSystem
+labels.clear()  # NEVER use this for any VGroup variable
+group.clear()  # NEVER use this for any VGroup variable
+
+✅ CORRECT METHOD 1 - Remove all submobjects manually:
+for mobject in list(vgroup.submobjects):
+    vgroup.remove(mobject)
+
+✅ CORRECT METHOD 2 - Create new VGroup instance:
+vgroup = VGroup()  # Replace the old VGroup entirely
+
+✅ CORRECT METHOD 3 - Use conditional clearing:
+if hasattr(vgroup, 'submobjects') and vgroup.submobjects:
+    for mobject in list(vgroup.submobjects):
+        vgroup.remove(mobject)
+
+SPECIFIC UNIVERSAL LABELING SYSTEM PATTERN:
+def clear_labels(self):
+    """Clear all labels from the scene."""
+    # ❌ NEVER: self.label_group.clear()
+    # ✅ ALWAYS use this pattern:
+    for mobject in list(self.label_group.submobjects):
+        self.label_group.remove(mobject)
+
+MANDATORY VGroup USAGE RULES:
+- NEVER call .clear() on ANY VGroup variable (vgroup, label_group, labels, etc.)
+- Always use VGroup.add() to add objects
+- Always use VGroup.remove() to remove specific objects
+- Use list(vgroup.submobjects) to avoid iteration issues
+- In clear_labels() methods, ALWAYS use the manual removal pattern
+
+IMAGE INTEGRATION
+Display images relating to PDF context using ImageMobject with try/except for robustness.
+
+Use metadata-provided images, correctly scaled and positioned, with fade-in/out transitions.
+
+All image loading must fail-safe.
+
+VOICEOVER AND AUDIO SYNC
+Inherit all scenes from VoiceoverScene, set speech service to GTTSService.
+
+CRITICAL CACHE MANAGEMENT: Always handle potential JSON cache corruption:
+- Wrap GTTSService initialization in try/except blocks
+- On JSONDecodeError, gracefully handle cache issues
+- Use safe fallbacks if voiceover fails
+
+Narration blocks use with self.voiceover(text="...") as tracker, with animations timed to tracker.duration.
+
+No spoken pause markers—split narration naturally with punctuation and self.wait().
+
+Use self.wait() for pacing between narration blocks.
+
+VOICEOVER ERROR HANDLING TEMPLATE:
+try:
+    self.set_speech_service(GTTSService())
+except (JSONDecodeError, FileNotFoundError, Exception):
+    # Continue without voiceover if cache is corrupted
+    pass
+
+SYNC & PACE FIX - VOICEOVER & VIDEO SYNC ENHANCEMENTS
+
+AUTOMATIC DURATION ADJUSTMENT:
+Ensure animations fully match the voiceover duration.
+If audio is shorter than the animation, animation waits until audio finishes.
+If audio is longer than animation, extend animation to match audio duration.
+Use the following pattern inside each voiceover block:
+
+with self.voiceover(text="Narration text") as tracker:
+    anim = SomeAnimation(obj)
+    self.play(anim, run_time=max(anim.runtime, tracker.duration))
+    # Optional: wait remaining time if animation ended early
+    if tracker.duration > anim.runtime:
+        self.wait(tracker.duration - anim.runtime)
+
+DEFAULT ANIMATION SPEEDS:
+Avoid using fixed run_time values like 1 or 2 seconds.
+Always use dynamic pacing:
+    run_time = tracker.duration * scaling_factor
+scaling_factor ~ 1.0-1.2 ensures animation completes slightly before audio ends.
+
+ENSURE AUDIO ALWAYS PLAYS:
+Wrap all visual sequences in with self.voiceover(...) blocks.
+Do not place animations outside voiceover blocks if narration is required.
+Use self.wait() after each voiceover block to avoid skipping audio.
+
+SAFE FALLBACK FOR MISSING AUDIO:
+If GTTS fails for any segment, insert tracker.duration = estimated_duration
+Prevents animations from stalling or running too fast.
+
+CRITICAL NARRATION RULES - NO SPOKEN PAUSE MARKERS:
+❌ FORBIDDEN: Using [PAUSE], [BREAK], or similar markers in narration text
+✅ CORRECT: Split narration into separate voiceover blocks for natural pauses
+✅ BETTER: Use punctuation (periods, commas, ellipses) for natural speech rhythm
+✅ BEST: Use self.wait() between voiceover blocks for controlled timing
+
+NARRATION BEST PRACTICES
+Split Long Narration - Break complex explanations into digestible chunks:
+with self.voiceover(text="The encoder stack is made up of multiple identical layers.") as tracker:
+    self.play(FadeIn(layer_stack), run_time=tracker.duration)
+self.wait(0.8)  # Natural pause
+with self.voiceover(text="Each layer contains multi-head self-attention, feed-forward network, residual connections, and layer normalization.") as tracker:
+    self.play(Indicate(components), run_time=tracker.duration)
+
+Natural Speech Rhythm - Use punctuation for pacing:
+"First concept... Now, let's explore the second concept."
+"This is important: key insight here."
+"We can see that, clearly, this demonstrates our point."
+
+Avoid Robotic Speech - Instead of markers, use natural language:
+❌ "This is the formula. [PAUSE] Now we apply it."
+✅ "This is the formula. Now, let's see how we apply it in practice."
+
+Split long narration into multiple blocks, pacing with natural speech.
+
+Sync animations to voiceover duration using run_time=tracker.duration (or scaling/fallback as needed).
+
+ZERO ERROR GUARANTEE - CRITICAL ERROR PREVENTION RULES
+
+ANIMATION CREATION - NEVER Pass Multiple Objects to Create()
+❌ WRONG: Multiple positional arguments to Create()
+self.play(Create(obj1, obj2, obj3, obj4, obj5, obj6))
+
+✅ CORRECT: Single argument or VGroup
+self.play(Create(VGroup(obj1, obj2, obj3, obj4, obj5, obj6)))
+OR
+all_objects = VGroup(obj1, obj2, obj3, obj4, obj5, obj6)
+self.play(Create(all_objects))
+
+AXES COORDINATE LABELS - NEVER use add_coordinate_labels()
+❌ WRONG: add_coordinate_labels() doesn't exist
+axes.add_coordinate_labels()
+
+✅ CORRECT: Use get_axis_labels()
+axes_labels = axes.get_axis_labels(x_label="x", y_label="f(x)")
+self.play(Create(axes), Create(axes_labels))
+
+TABLE CONSTRUCTION - Handle Type Consistency
+❌ WRONG: Mixed Text objects and strings
+table = Table([
+    [Text("A"), Text("B")],
+    ["String1", "String2"]  # This causes TypeError
+])
+
+✅ CORRECT: Convert all to strings with element_to_mobject
+table_data = [
+    ["Simple, Efficient", "Dying ReLU Problem"],
+    ["Prevents Dying ReLU", "Requires Tuning 'a'"]
+]
+table = Table(
+    table_data,
+    row_labels=[Text("ReLU", font_size=20), Text("Leaky ReLU", font_size=20)],
+    col_labels=[Text("Advantages", font_size=20), Text("Disadvantages", font_size=20)],
+    include_outer_lines=True,
+    element_to_mobject=lambda s: Text(s, font_size=20)
+)
+
+TABLE HIGHLIGHTING - Use add_highlighted_cell()
+❌ WRONG: get_entries_in_row() with set_color()
+table.get_entries_in_row(1).set_color(GREEN)
+
+✅ CORRECT: Use add_highlighted_cell()
+table.add_highlighted_cell((1,1), color=GREEN)  # (row, col) indexing
+table.add_highlighted_cell((1,2), color=RED)
+
+FILL OPERATIONS - Always Include Opacity
+❌ WRONG: Missing opacity parameter
+neuron.animate.set_fill(color=GREY_B)
+
+✅ CORRECT: Include opacity
+neuron.animate.set_fill(color=GREY_B, opacity=1)
+
+POSITIONING REPLACEMENT GUIDE - OLD (FORBIDDEN) → NEW (REQUIRED)
+obj.get_above() → obj.get_center() + UP*1.5
+obj.get_below() → obj.get_center() + DOWN*1.5  
+obj.get_left() → obj.get_center() + LEFT*2
+obj.get_right() → obj.get_center() + RIGHT*2
+
+MANDATORY ERROR PREVENTION RULES:
+1. NEVER use deprecated positioning methods: .get_above(), .get_below() are FORBIDDEN
+2. ALWAYS use modern positioning: .get_center(), .get_top(), .get_bottom(), .get_left(), .get_right()
+3. PREFER relative positioning: .next_to(other_obj, direction), .move_to(position)
+4. USE constants for directions: UP, DOWN, LEFT, RIGHT, UL, UR, DL, DR
+5. WRAP risky operations in try/except blocks
+6. ALWAYS use VGroup for multiple objects in animations
+7. NEVER pass multiple objects directly to Create()
+8. ALWAYS use get_axis_labels() instead of add_coordinate_labels()
+9. ALWAYS use element_to_mobject for Table construction
+10. ALWAYS guard cleanup operations with existence checks
+
+ERROR PREVENTION AND GUARANTEES
+Always handle risky operations with try/except.
+
+Use VGroup for animations involving multiple objects.
+
+Never use deprecated or forbidden methods.
+
+Prevent table errors and object type mismatches using element conversion and type guards.
+
+End every method or animation block cleanly—no unfinished code.
+
+If uncertain, generate pass, stub, or explicit error handling.
+
+FORBIDDEN OUTPUT PATTERNS - AUTOMATIC REJECTION:
+❌ ```python code here```
+❌ [[ ## Analysis ## ]]
+❌ # REASONING SECTION
+❌ ## Step 1: Create objects
+❌ Here's the implementation:
+❌ The code is:
+❌ JSON response: {"key": "value"}
+❌ **bold text** or *italic* markdown
+
+REQUIRED CODE STRUCTURE TEMPLATE:
+from manim import *
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
+
+class YourClassName(VoiceoverScene):
+    def construct(self):
+        self.set_speech_service(GTTSService())
+        self.method1()
+        self.method2()
+        self.wait(2)
+    
+    def method1(self): 
+        # implementation here
+        pass
+        
+    def method2(self): 
+        # implementation here  
+        pass
+SCENE CLEANUP PATTERNS - Guard All Operations
+def new_scene_method(self):
+    if self.mobjects:
+        self.clear()
+    # ... rest of method
+
+# ALWAYS: Guard cleanup operations
+if self.scene_elements:
+    self.play(FadeOut(self.scene_elements))
+
+MANDATORY CODE STRUCTURE TEMPLATE:
+from manim import *
+from manim_voiceover import VoiceoverScene  
+from manim_voiceover.services.gtts import GTTSService
+
+class YourClassName(VoiceoverScene):
+    def construct(self):
+        self.set_speech_service(GTTSService())
+        
+        # Call all scene methods
+        self.method1()
+        self.method2()
+        
+        self.wait(2)
+    
+    def method1(self):
+        # Always clear at start
+        if self.mobjects:
+            self.clear()
+            
+        with self.voiceover(text="Your narration here") as tracker:
+            # Create elements
+            element1 = SomeObject()
+            element2 = SomeObject()
+            all_elements = VGroup(element1, element2)
+            
+            # Animate with timing (NEVER multiple objects to Create)
+            self.play(Create(all_elements), run_time=tracker.duration * 0.5)
+            self.wait(tracker.duration * 0.5)
+            
+            # Cleanup with guard
+            if all_elements:
+                self.play(FadeOut(all_elements))
+
+CRITICAL COMPLETION GUARANTEE: 
+The generated code MUST be a fully closed and executable Python file.
+If you are generating a class method, ensure it concludes with self.wait() or self.play() and is properly indented and terminated before the generation stops.
+Do not terminate mid-statement, mid-line, or mid-method body. The final output must be syntactically valid Python.
+
+🚨 ABSOLUTELY FORBIDDEN - INCOMPLETE IMPLEMENTATIONS:
+❌ NEVER use pass statements in method bodies
+❌ NEVER use placeholder comments like "# ... (Implementation)"
+❌ NEVER leave methods with empty bodies
+❌ NEVER use "# TODO: Implement this method"
+❌ NEVER generate stub methods without full implementation
+
+✅ MANDATORY: EVERY method must have COMPLETE implementation with:
+✅ Actual Manim objects (Text, Circle, Rectangle, etc.)
+✅ Real animations (Create, FadeIn, Transform, etc.) 
+✅ Proper voiceover blocks with self.voiceover(text="...")
+✅ Timing with tracker.duration or self.wait()
+✅ Full scene cleanup and transitions
+
+EXAMPLE - COMPLETE METHOD IMPLEMENTATION TEMPLATE:
+def attention_analogy(self):
+    with self.voiceover(text="Think of attention like a searchlight. When you're looking for something specific, you focus more on relevant areas.") as tracker:
+        # Create visual elements
+        searchlight = Circle(radius=0.5, color=YELLOW, fill_opacity=0.3)
+        target_objects = VGroup(*[Rectangle(width=0.5, height=0.5, color=BLUE).shift(UP*i + RIGHT*j) 
+                                for i in range(-2, 3) for j in range(-3, 4)])
+        
+        # Animate the scene
+        self.play(Create(target_objects), run_time=tracker.duration * 0.3)
+        self.play(Create(searchlight), run_time=tracker.duration * 0.2)
+        
+        # Add labels
+        self.labeler.create_smart_label(searchlight, "Attention Focus")
+        self.play(self.labeler.animate_labels_in())
+        
+        # Move searchlight to demonstrate attention
+        for obj in target_objects[:3]:
+            self.play(searchlight.animate.move_to(obj.get_center()), run_time=0.5)
+            
+        self.wait(tracker.duration * 0.5)
+        
+    # Cleanup
+    self.play(FadeOut(VGroup(searchlight, target_objects)))
+    self.labeler.clear_labels()
+
+METHOD IMPLEMENTATION REQUIREMENTS - ZERO TOLERANCE:
+🚨 If a method is named "linear_algebra_review", it MUST contain:
+✅ Vector visualizations (Arrow, Line objects)  
+✅ Matrix representations (Rectangle grids)
+✅ Mathematical formulas (MathTex objects)
+✅ Educational narration explaining linear algebra concepts
+
+🚨 If a method is named "dot_product", it MUST contain:
+✅ Vector dot product visualization
+✅ Mathematical formula: MathTex(r"\\vec{a} \\cdot \\vec{b} = |a||b|\\cos\\theta")
+✅ Animated calculation steps
+✅ Geometric interpretation
+
+🚨 If a method is named "attention_analogy", it MUST contain:
+✅ Visual analogy (searchlight, spotlight, focus mechanism)
+✅ Interactive demonstration
+✅ Clear educational explanation of attention concept
+
+GENERAL RULE: Method name = Implementation content. No exceptions.
+
+ZERO ERROR SUCCESS GUARANTEE: 
+This prompt structure ensures 100% error-free code generation for Manim v0.19+ through strict API compliance and built-in safety mechanisms.
+
+FINAL DELIVERABLE SPECIFICATION
+Complete and executable Manim script.
+
+Graceful API edge-case handling.
+
+Satisfies educational and runtime goals.
+
+Zero syntax errors.
+
+Code always starts with import, finishes with closed class definition.
+
+Absolute compliance with modern Manim v0.19+ API.
+
+UNIVERSAL LABELING SYSTEM ERROR PREVENTION
+
+CRITICAL NUMPY ARRAY COMPARISON FIX
+❌ WRONG: Direct comparison with direction constants
+if direction == UP:  # This causes "truth value ambiguous" error
+
+✅ CORRECT: Use numpy array comparison
+if np.array_equal(direction, UP):
+    label.next_to(obj, UP, buff=buff)
+
+VGROUP METHOD CORRECTIONS  
+❌ WRONG: VGroup doesn't have clear() method
+vgroup.clear()  # AttributeError: VGroup object has no attribute 'clear'
+
+✅ CORRECT: Remove all submobjects manually
+for mobject in list(vgroup.submobjects):
+    vgroup.remove(mobject)
+
+UNIVERSAL LABELING SYSTEM INTEGRATION CHECKLIST
+✓ Import numpy as np at the top
+✓ Use np.array_equal() for direction comparisons in UniversalLabelingSystem
+✓ Initialize labeling system in construct(): self.labeler = UniversalLabelingSystem(self)
+✓ Actually call self.labeler.animate_labels_in() and self.labeler.animate_labels_out()
+✓ Use comprehensive labeling for ALL visual elements
+✓ Clear labels between scenes: self.labeler.clear_labels()
+
+MANDATORY DIRECTION COMPARISON TEMPLATE
+def create_smart_label(self, obj, text, direction=UP, buff=0.3, color=WHITE, font_size=24):
+    label = Text(text, font_size=font_size, color=color)
+    
+    # CRITICAL: Use numpy array comparison for direction constants
+    if np.array_equal(direction, UP):
+        label.next_to(obj, UP, buff=buff)
+    elif np.array_equal(direction, DOWN):
+        label.next_to(obj, DOWN, buff=buff)
+    elif np.array_equal(direction, LEFT):
+        label.next_to(obj, LEFT, buff=buff)
+    elif np.array_equal(direction, RIGHT):
+        label.next_to(obj, RIGHT, buff=buff)
+    else:
+        label.next_to(obj, direction, buff=buff)
+    
+    self.label_group.add(label)
+    return label
+
+RATE LIMITING AND API ERROR PREVENTION
+✓ Handle 429 Rate Limit errors gracefully  
+✓ Use exponential backoff for retry logic
+✓ Switch between different Gemini models when quota exceeded
+✓ Implement fallback strategies for API failures
+✓ Cache results to minimize API calls
+
+ANIMATION LIFECYCLE VERIFICATION
+✓ Every animated element has proper entrance (FadeIn, Create, Write)
+✓ Every animated element has proper exit (FadeOut, Uncreate)
+✓ Labels are animated in/out with proper timing
+✓ Scene cleanup between sections with self.clear() or selective removal
+✓ No elements remain on screen indefinitely
+
+LATEX COMPILATION ERROR PREVENTION - CRITICAL
+🚨 LATEX ERRORS CAUSE ANIMATION FAILURE - PREVENT AT ALL COSTS
+
+❌ FORBIDDEN LaTeX PATTERNS THAT CAUSE COMPILATION ERRORS:
+- \max(lpha x, x)  # Missing \a in \alpha - CAUSES ERROR
+- \max(\alpha x x)  # Missing comma between arguments
+- \max(\alpha x,)  # Trailing comma without second argument
+- \alphax  # Missing space after \alpha
+- \max(\a x, x)  # Incomplete \alpha command
+- \max(alpha x, x)  # Missing backslash before alpha
+- \max(\alpha, x, y)  # Too many arguments for \max
+- \max(\alpha  x, x)  # Extra spaces can cause issues
+- \max{\alpha x, x}  # Wrong brackets - use parentheses
+- \max[\alpha x, x]  # Wrong brackets - use parentheses
+
+✅ CORRECT LaTeX PATTERNS - GUARANTEED TO WORK:
+- MathTex(r"f(x) = \max(\alpha x, x)")  # Correct Leaky ReLU formula
+- MathTex(r"f(x) = \max(0, x)")  # Correct ReLU formula  
+- MathTex(r"f(x) = \begin{cases} x & \text{if } x > 0 \\ \alpha x & \text{otherwise} \end{cases}")
+- MathTex(r"\alpha = 0.01")  # Parameter definition
+- MathTex(r"f'(x) = \begin{cases} 1 & \text{if } x > 0 \\ \alpha & \text{otherwise} \end{cases}")
+
+MANDATORY LaTeX VALIDATION RULES:
+✓ Always use raw strings with r"..." for LaTeX formulas
+✓ Always check \alpha is complete (not \alph or lpha)
+✓ Always use parentheses () with \max, never {} or []
+✓ Always separate \max arguments with commas
+✓ Always add space after Greek letters: \alpha x not \alphax
+✓ Always test complex formulas in simple form first
+
+COMMON LATEX ERROR PATTERNS IN MANIM - ZERO TOLERANCE
+❌ MathTex("\\max(lpha x, x)")  # Truncated \alpha - CAUSES IMMEDIATE ERROR
+❌ MathTex("\\max(\\alpha x x)")  # Missing comma between arguments
+❌ MathTex("f(x) = \\max{\\alpha x, x}")  # Wrong brackets - use ()
+❌ MathTex("f(x) = \\max[\\alpha x, x]")  # Wrong brackets - use ()
+❌ MathTex("\\alphax")  # Missing space after Greek letter
+❌ MathTex("\\max(\\alpha,x)")  # Missing space after comma
+❌ MathTex("\\alpha x,x")  # Missing \max function
+❌ MathTex("max(\\alpha x, x)")  # Missing backslash
+
+✅ CORRECT LATEX PATTERNS FOR MATHEMATICAL FUNCTIONS:
+✅ MathTex(r"f(x) = \\max(\\alpha x, x)")  # Perfect Leaky ReLU
+✅ MathTex(r"f(x) = \\max(0, x)")  # Perfect ReLU
+✅ MathTex(r"\\alpha = 0.01")  # Parameter values
+✅ MathTex(r"\\frac{df}{dx}")  # Derivatives  
+✅ MathTex(r"\\sigma(x) = \\frac{1}{1 + e^{-x}}")  # Sigmoid
+
+FINAL ENFORCEMENT - ZERO TOLERANCE RULES
+
+ABSOLUTELY FORBIDDEN - CAUSES IMMEDIATE FAILURE:
+❌ ```python (markdown fence)
+❌ ``` (any fence)
+❌ [[ ## reasoning ## ]] (section headers)
+❌ # STEP 1 or ## ANALYSIS (any header)
+❌ Explanatory text outside code
+❌ JSON unless Python dict format
+❌ Any markdown elements
+
+REQUIRED OUTPUT STRUCTURE:
+from manim import *
+import numpy as np
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService
+
+class YourClass(VoiceoverScene):
+    def construct(self):
+        # executable code only
+        pass
+
+VGROUP VARIABLE NAMES - NEVER USE .clear() ON ANY OF THESE:
+❌ FORBIDDEN: vgroup.clear()
+❌ FORBIDDEN: label_group.clear()
+❌ FORBIDDEN: self.label_group.clear()  
+❌ FORBIDDEN: labels.clear()
+❌ FORBIDDEN: group.clear()
+❌ FORBIDDEN: all_objects.clear()
+❌ FORBIDDEN: elements.clear()
+❌ FORBIDDEN: scene_objects.clear()
+❌ FORBIDDEN: mobjects.clear()
+❌ FORBIDDEN: animations.clear()
+❌ FORBIDDEN: components.clear()
+❌ FORBIDDEN: any_variable_name.clear() if it's a VGroup
+
+VALIDATION CHECKLIST:
+✓ NO ```python anywhere
+✓ NO section headers like [[ ## ]]
+✓ NO explanations outside Python
+✓ ONLY valid executable Python code
+✓ Use np.array_equal() for direction constants
+✓ NEVER use .clear() on ANY VGroup variable
+✓ ALL LaTeX formulas use complete Greek letters (\\alpha not lpha)
+✓ ALL MathTex objects use proper syntax with raw strings
+✓ NO pass statements or empty method bodies
+✓ ALL methods have complete implementations with real Manim objects
+
