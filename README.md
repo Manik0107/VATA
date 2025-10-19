@@ -1,4 +1,4 @@
-# VATA - Visual Animation Teaching Assistant
+# VATA - Visual Assistant and Teaching AI
 
 <div align="center">
 
