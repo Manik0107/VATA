@@ -1,4 +1,4 @@
-# VATA - Visual Assistant and Teaching AI
+# VATA - Virtual Assistant and Teaching AI
 
 <div align="center">
 
@@ -19,7 +19,7 @@ Transform educational content from documents into engaging mathematical animatio
 
 ## 🎯 Overview
 
-VATA (Visual Animation Teaching Assistant) is an intelligent system that automatically generates professional educational animations from PDF documents using:
+VATA (Virtual Assistant and Teaching AI) is an intelligent system that automatically generates professional educational animations from PDF documents using:
 
 - **DSPy Framework**: Structured LLM orchestration for reliable generation
 - **Manim Community Edition v0.19+**: Mathematical animation engine
