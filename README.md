@@ -17,7 +17,7 @@ Transform educational content from documents into engaging mathematical animatio
 
 ---
 
-## 🎯 Overview
+## Overview
 
 VATA (Virtual Assistant and Teaching AI) is an intelligent system that automatically generates professional educational animations from PDF documents using:
 
@@ -28,15 +28,16 @@ VATA (Virtual Assistant and Teaching AI) is an intelligent system that automatic
 
 ### Key Capabilities
 
-✨ **Document-Grounded Learning** - Extracts educational content from PDFs  
-🎬 **Automated Storyboarding** - Creates detailed visual teaching sequences  
-🎙️ **Voiceover Narration** - Generates synchronized audio explanations  
-🔍 **Runtime Validation** - Tests generated code through actual execution  
-🎨 **Professional Animations** - Produces cinema-quality educational videos
+- **Document-Grounded Learning** - Extracts educational content from PDFs
+- **Automated Storyboarding** - Creates detailed visual teaching sequences
+- **Voiceover Narration** - Generates synchronized audio explanations
+- **Runtime Validation** - Tests generated code through actual execution
+- **Professional Animations** - Produces cinema-quality educational videos
+- **Automated Error Fixing** - Integrated code fixing pipeline for robust generation
 
 ---
 
-## 🚀 Features
+## Features
 
 ### Intelligent Content Extraction
 
@@ -64,15 +65,24 @@ Four-layer validation pipeline ensures error-free animations:
 
 Comprehensive prevention for common Manim v0.19+ migration issues:
 
-- ✅ VGroup coordinate system compatibility
-- ✅ BarChart API parameter validation
-- ✅ Text/Tex/MathTex proper usage
-- ✅ DashedVMobject vs deprecated DashedStroke
-- ✅ Animation lifecycle management
+- VGroup coordinate system compatibility
+- BarChart API parameter validation
+- Text/Tex/MathTex proper usage
+- DashedVMobject vs deprecated DashedStroke
+- Animation lifecycle management
+
+### Automated Code Fixing
+
+Integrated codefixer.py pipeline:
+
+- Automatic detection and correction of runtime errors
+- 5-minute timeout protection for long-running fixes
+- Graceful fallback on fixing failures
+- Comprehensive error logging and reporting
 
 ---
 
-## 📋 Requirements
+## Requirements
 
 ### System Requirements
 
@@ -95,7 +105,7 @@ gtts
 
 ---
 
-## 🔧 Installation
+## Installation
 
 ### 1. Clone the Repository
 
@@ -147,20 +157,37 @@ Get your Gemini API key from [Google AI Studio](https://makersuite.google.com/ap
 
 ---
 
-## 🎬 Quick Start
+## Quick Start
 
-### Basic Usage
+### Primary Workflow (Recommended)
 
-Generate an animation from a PDF document:
+Execute the complete pipeline with automated error handling and code fixing:
 
 ```bash
-python dspy_manim_workflow.py \
-  --document "pdfs/linear_regression_notes.pdf" \
-  --topic "Linear Regression" \
-  --output "generated_animation.py"
+python main_execution.py
 ```
 
-### Advanced Options
+This automated workflow includes:
+- Environment validation
+- Input document verification
+- DSPy workflow execution with enhanced narration and detailed storyboarding
+- Automated code generation and saving
+- Comprehensive workflow reporting
+- Automatic code error fixing via codefixer.py
+
+### Configuration
+
+Edit the parameters in `main_execution.py` (lines 97-99):
+
+```python
+document_path = "pdfs/linear_regression_notes.pdf"  # Your PDF document
+topic = "explain everything about linear regression"  # Educational topic
+class_name = "LinearRegression"  # Optional class name for the animation
+```
+
+### Direct API Usage (Advanced)
+
+For custom workflows, use the DSPy workflow directly:
 
 ```bash
 python dspy_manim_workflow.py \
@@ -172,29 +199,34 @@ python dspy_manim_workflow.py \
   --output "output_file.py"
 ```
 
-### Render the Generated Animation
+### Render Generated Animations
+
+After successful generation, render the animation using Manim:
 
 ```bash
 # High quality (1080p, 60fps)
-manim generated_animation.py CustomAnimation -pqh
+manim generated_animation_dspy.py LinearRegression -pqh
 
 # Low quality for quick preview (480p, 15fps)
-manim generated_animation.py CustomAnimation -pql
+manim generated_animation_dspy.py LinearRegression -pql
 
 # 4K quality
-manim generated_animation.py CustomAnimation -pqk
+manim generated_animation_dspy.py LinearRegression -pqk
 ```
 
 ---
 
-## 📚 Documentation
+## Documentation
 
 ### Project Structure
 
 ```
 VATA/
+├── main_execution.py           # Primary execution workflow with error handling
 ├── dspy_manim_workflow.py      # Main workflow orchestration
+├── codefixer.py                # Automated code error fixing
 ├── generation.py               # Animation generation utilities
+├── agno_agents.py              # Agno AI agent implementations
 ├── main.py                     # CLI entry point
 ├── test.py                     # Test suite
 ├── prompts/                    # LLM prompt templates
@@ -205,12 +237,32 @@ VATA/
 ├── media/                      # Generated animations
 │   └── videos/                 # Rendered video outputs
 ├── output/                     # Processing outputs
+├── report.json                 # Workflow execution report
 └── README.md                   # This file
 ```
 
 ### Core Components
 
-#### 1. **DSPyManipWorkflow**
+#### 0. **main_execution.py**
+
+Primary execution workflow with comprehensive error handling:
+
+**Workflow Steps:**
+1. Environment validation - Verifies GEMINI_API_KEY presence
+2. Input file validation - Checks PDF document exists and is accessible
+3. Workflow initialization - Sets up DSPy Manim workflow
+4. Execution - Runs workflow with enhanced narration and detailed storyboarding
+5. Code saving - Exports generated animation code
+6. Report generation - Creates JSON report with inputs/outputs
+7. Automated fixing - Runs codefixer.py to correct errors
+
+**Key Features:**
+- Timeout protection (5-minute limit for code fixing)
+- Graceful error handling with detailed messages
+- Automatic fallback when codefixer fails
+- Comprehensive logging and status reporting
+
+#### 1. **DSPyManimWorkflow**
 
 Main orchestrator managing the complete pipeline:
 
@@ -243,7 +295,7 @@ Multi-layer validation and fixing system:
 **Validation Flow:**
 
 ```
-Code → Syntax Check → Logic Check → Runtime Test → Manim Test → ✅
+Code → Syntax Check → Logic Check → Runtime Test → Manim Test → Success
          ↓              ↓              ↓              ↓
       Fix with      Fix with       Fix with       Fix with
        Agno          Agno           Agno           Agno
@@ -263,7 +315,7 @@ Generates educational narration with visual synchronization
 
 ---
 
-## 🏗️ Architecture
+## Architecture
 
 ### Pipeline Flow
 
@@ -310,7 +362,7 @@ exec(code) → Instantiate Scene class → Verify construct() method
 
 ---
 
-## 🎨 Example Output
+## Example Output
 
 ### Input Document
 
@@ -321,21 +373,52 @@ Topic: "Understanding Linear Regression"
 
 ### Generated Animation Features
 
-- 📊 **Scene 1-2**: Introduction to regression concepts
-- 📈 **Scene 3-5**: Mathematical formulation and visualization
-- 🎯 **Scene 6-8**: Gradient descent optimization
-- 🔍 **Scene 9-10**: Applications and examples
+- **Scene 1-2**: Introduction to regression concepts
+- **Scene 3-5**: Mathematical formulation and visualization
+- **Scene 6-8**: Gradient descent optimization
+- **Scene 9-10**: Applications and examples
 
-### Output Video
+### Workflow Outputs
 
-- **Resolution**: 1080p or 4K
-- **Duration**: ~2-5 minutes (depending on content)
-- **Format**: MP4 with H.264 encoding
-- **Audio**: TTS voiceover synchronized with visuals
+The main_execution.py workflow generates two primary outputs:
+
+**1. Generated Animation Code (`generated_animation_dspy.py`)**
+- Complete Manim animation class
+- 10-scene educational sequence
+- Integrated voiceover narration
+- Professional visual elements
+
+**2. Workflow Report (`report.json`)**
+
+Comprehensive JSON report containing:
+
+```json
+{
+  "inputs": {
+    "document_path": "pdfs/linear_regression_notes.pdf",
+    "topic": "educational topic description",
+    "class_name": "LinearRegression"
+  },
+  "outputs": {
+    "extracted_content": "PDF content extraction results",
+    "teaching_plan": "Structured educational plan",
+    "storyboard": "Detailed visual storyboard",
+    "enhanced_narration": "Generated voiceover scripts",
+    "detailed_storyboard": "Frame-by-frame specifications",
+    "generated_code": "Complete animation code"
+  }
+}
+```
+
+This report is useful for:
+- Debugging workflow execution
+- Understanding AI decision-making
+- Iterating on educational content
+- Analyzing generation quality
 
 ---
 
-## 🛠️ Configuration
+## Configuration
 
 ### Prompt Customization
 
@@ -375,7 +458,7 @@ fps = 60
 
 ---
 
-## 🔍 Troubleshooting
+## Troubleshooting
 
 ### Common Issues
 
@@ -414,22 +497,22 @@ pip install --upgrade manim manim-voiceover dspy-ai
 
 ---
 
-## 📊 Error Prevention System
+## Error Prevention System
 
 ### Critical Error Prevention Rules
 
 The system includes comprehensive prevention for 10 critical error patterns:
 
-1. ✅ **BarChart API Compatibility** - Proper parameter usage
-2. ✅ **DashedVMobject vs DashedStroke** - Modern API usage
-3. ✅ **VGroup Coordinate Systems** - Proper positioning methods
-4. ✅ **Text vs Tex vs MathTex** - Correct text rendering
-5. ✅ **Animation Lifecycle** - Proper entrance/exit patterns
-6. ✅ **Import Management** - Complete dependency inclusion
-7. ✅ **get_area() Parameters** - Required graph parameter
-8. ✅ **Graph Line Creation** - Correct API syntax
-9. ✅ **Text Size Parameters** - font_size vs deprecated size
-10. ✅ **VoiceoverScene Integration** - Proper voiceover setup
+1. **BarChart API Compatibility** - Proper parameter usage
+2. **DashedVMobject vs DashedStroke** - Modern API usage
+3. **VGroup Coordinate Systems** - Proper positioning methods
+4. **Text vs Tex vs MathTex** - Correct text rendering
+5. **Animation Lifecycle** - Proper entrance/exit patterns
+6. **Import Management** - Complete dependency inclusion
+7. **get_area() Parameters** - Required graph parameter
+8. **Graph Line Creation** - Correct API syntax
+9. **Text Size Parameters** - font_size vs deprecated size
+10. **VoiceoverScene Integration** - Proper voiceover setup
 
 ### Validation Reports
 
@@ -442,7 +525,7 @@ After generation, check `VERIFICATION_REPORT.md` for:
 
 ---
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please follow these steps:
 
@@ -461,13 +544,13 @@ Contributions are welcome! Please follow these steps:
 
 ---
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ---
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 - **Manim Community** - For the incredible mathematical animation framework
 - **DSPy Team** - For structured LLM programming paradigms
@@ -476,7 +559,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 📧 Contact
+## Contact
 
 **Project Maintainer**: Manik Manavendram
 
@@ -485,7 +568,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ---
 
-## 🗺️ Roadmap
+## Roadmap
 
 ### Version 2.0 (Planned)
 
@@ -506,8 +589,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 <div align="center">
 
-**Made with ❤️ for educators and learners worldwide**
+**Made for educators and learners worldwide**
 
-⭐ Star this repo if you find it useful!
+Star this repo if you find it useful!
 
 </div>
