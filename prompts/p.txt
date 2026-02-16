@@ -1,0 +1,69 @@
+Generate executable Python code for Manim Community v0.19+ only. Follow these rules strictly:
+
+Begin immediately with:
+from manim import *
+
+Class structure:
+class MyScene(Scene):
+def construct(self):
+# Add your animation code here
+self.wait()
+
+No markdown code fences or comments outside code. No JSON except valid Python dict syntax. No pass statements. Every method must be fully implemented.
+
+Use Scene as the main container for animations. Subclass Scene or OpenGLScene.
+
+Create vectorized mobjects like Circle, Square, Polygon, Line, Arrow using:
+Circle(radius=..., color=...), Square(side_length=...), Polygon(points), Line(start=..., end=...), Arrow(start=..., end=...)
+
+Use Text() for simple text and MathTex(r"latex-code") for LaTeX math formulas, with correct LaTeX commands and raw strings.
+
+Group objects with VGroup(...). Arrange groups with .arrange(direction, buff=...).
+
+Use Axes(x_range=[start, end, step], y_range=[start, end, step]) for coordinate systems. Use Axes.plot(func, x_range=[start, end]) for graphs.
+
+Use BarChart(values=[...], bar_colors=[...]) for bar charts.
+
+Add objects to scenes via self.add(...).
+
+Animate objects with self.play(...), using animations like Create(), FadeIn(), FadeOut(), Transform(), Write(), GrowFromCenter(), Indicate().
+
+Use .animate for smooth property animations, e.g. circle.animate.shift(RIGHT).
+
+Control animation speed and pacing with run_time and rate_func parameters. Rate functions include linear, smooth, there_and_back, rush_into, etc.
+
+Use ValueTracker to hold dynamic values, and add updaters to mobjects for framewise updates, e.g. obj.add_updater(func).
+
+Use always_redraw(lambda: ...) for automatic mobject redraws based on changing values.
+
+Use config to globally configure render properties: pixel dimensions, background color, frame rate.
+
+Avoid deprecated or error-prone methods like .get_above(), .clear(), inconsistent double parameters.
+
+For OpenGL rendering, import from manim.opengl and subclass OpenGLScene.
+
+Wrap animations within voiceover blocks if voice-over is used:
+with self.voiceover(text="...") as tracker:
+self.play(..., run_time=tracker.duration * multiplier)
+
+Always check objects are added before animating.
+
+Ensure LaTeX syntax is valid and raw strings are used.
+
+Use standard colors like BLUE, RED, GREEN. For custom colors, use rgb_to_color([r,g,b]).
+
+No duplicate parameters in calls; e.g., Axes(x_range=..., y_range=...) no repeated args.
+
+Updaters must be attached to mobjects, not scenes directly.
+
+Full example layout:
+
+text
+from manim import *
+
+class MyScene(Scene):
+    def construct(self):
+        circle = Circle(radius=2, color=BLUE)
+        self.add(circle)
+        self.play(Create(circle), run_time=2)
+        self.wait(1)

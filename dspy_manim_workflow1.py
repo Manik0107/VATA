@@ -283,7 +283,7 @@ class DocumentGroundedExtractor(dspy.Module):
         Keep the logical structure and order of information intact."""
         
         response = client.models.generate_content(
-            model="gemini-2.5-flash",
+            model="gemini-2.0-flash",
             contents=[
                 types.Part.from_bytes(
                     data=pdf_bytes,
@@ -1051,7 +1051,7 @@ CRITICAL INSTRUCTIONS FOR CODE GENERATION:
 # MAIN DSPy PIPELINE - Orchestrates the Complete Workflow
 # =============================================================================
 
-class DSPyManimWorkflow(dspy.Module):
+class DSPyManipWorkflow(dspy.Module):
     """Complete DSPy-powered workflow for document-grounded Manim animation generation."""
     
     def __init__(self, api_key: str):
@@ -1075,7 +1075,6 @@ class DSPyManimWorkflow(dspy.Module):
         # Try different models in order of preference
         models_to_try = [
             "gemini/gemini-2.5-flash",  # More stable with higher limits
-            #"gemini-3-flash-preview"
             # "gemini/gemini-2.0-flash-exp",  # Experimental version
             # "gemini/gemini-1.5-pro",  # Backup option
             # "gemini/gemini-2.0-flash"  # Original fallback

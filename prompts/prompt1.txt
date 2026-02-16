@@ -14,6 +14,13 @@ ABSOLUTE FORBIDDEN ELEMENTS - ZERO TOLERANCE:
 ❌ ANY_VARIABLE.clear() if it's a VGroup - causes instant failure!
 ❌ \max(lpha x, x) - LaTeX ERROR: Incomplete \alpha causes compilation failure!
 ❌ pass statements in method bodies - FORBIDDEN: Every method needs full implementation!
+❌ ParametricSurface, Cylinder3D, Sphere3D - UNSUPPORTED: Use basic shapes only!
+❌ Advanced 3D objects - COMPATIBILITY ERROR: Stick to Circle, Rectangle, Line, Arrow!
+❌ Axes(x_range=..., x_range=...) - DUPLICATE PARAMETER ERROR: Never pass x_range twice!
+❌ axes.get_area(x_range=[0,5]) - MISSING 'graph' PARAMETER: Always provide graph object first!
+❌ coord_system.get_area(color=BLUE) - MISSING 'graph' PARAMETER: get_area() requires graph argument!
+❌ axes.get_area(x_range=[0,5]) - MISSING 'graph' PARAMETER: Always provide graph object first!
+❌ coord_system.get_area(color=BLUE) - MISSING 'graph' PARAMETER: get_area() requires graph argument!
 
 MANDATORY OUTPUT FORMAT:
 ✅ First line: from manim import *
@@ -332,6 +339,16 @@ axes.add_coordinate_labels()
 ✅ CORRECT: Use get_axis_labels()
 axes_labels = axes.get_axis_labels(x_label="x", y_label="f(x)")
 self.play(Create(axes), Create(axes_labels))
+
+AXES CONSTRUCTOR - NEVER Duplicate Parameters
+❌ WRONG: Multiple values for same parameter
+axes = Axes(x_range=[0, 5, 1], y_range=[0, 5, 1], x_range=[0, 10, 1])  # ERROR: x_range twice
+axes = Axes([0, 5, 1], [0, 5, 1], x_range=[0, 10, 1])  # ERROR: positional and keyword
+
+✅ CORRECT: Use parameters only once
+axes = Axes(x_range=[0, 5, 1], y_range=[0, 5, 1])  # Clean keyword arguments
+axes = Axes([0, 5, 1], [0, 5, 1])  # Clean positional arguments
+axes = Axes(x_range=[0, 5, 1], y_range=[0, 5, 1], axis_config={"color": BLUE})  # Additional params OK
 
 TABLE CONSTRUCTION - Handle Type Consistency
 ❌ WRONG: Mixed Text objects and strings
@@ -695,6 +712,111 @@ VGROUP VARIABLE NAMES - NEVER USE .clear() ON ANY OF THESE:
 ❌ FORBIDDEN: components.clear()
 ❌ FORBIDDEN: any_variable_name.clear() if it's a VGroup
 
+## ⚠️ CRITICAL ERROR PREVENTION - MANIM v0.19+ BREAKING CHANGES ⚠️
+
+### 🚨 BARCHART API ERRORS - ZERO TOLERANCE
+❌ FORBIDDEN: BarChart(values=[...], x_range=[...], y_range=[...])
+❌ FORBIDDEN: BarChart(values=[...], axis_config={...})
+❌ FORBIDDEN: histogram.get_axes().coords_to_point(x, y)
+❌ FORBIDDEN: bar_chart.axes.coords_to_point(x, y)
+
+✅ CORRECT: BarChart(values=[...], bar_colors=[...])
+✅ CORRECT: text.next_to(bar_chart, UP)  # Use relative positioning ONLY
+✅ CORRECT: Display statistics as Text objects, NOT geometric visualizations
+
+REASON: BarChart in v0.19+ auto-generates ranges. get_axes() returns VGroup (NO coords_to_point!)
+
+### 🚨 DASHED LINE ERRORS - ZERO TOLERANCE
+❌ FORBIDDEN: from manim import DashedStroke
+❌ FORBIDDEN: line.stroke_style = DashedStroke()
+❌ FORBIDDEN: line.set_stroke(dash_length=0.1)
+❌ FORBIDDEN: line.set_stroke(dash_ratio=0.5)
+
+✅ CORRECT: from manim import DashedVMobject
+✅ CORRECT: dashed = DashedVMobject(original_mobject, num_dashes=10)
+✅ CORRECT: dashed = DashedVMobject(axes.plot(func, ...), dashed_ratio=0.5)
+
+REASON: DashedStroke class removed in v0.19+. Use DashedVMobject wrapper.
+
+### 🚨 VGROUP COORDS_TO_POINT ERROR - ZERO TOLERANCE
+❌ FORBIDDEN: vgroup.coords_to_point(x, y)
+❌ FORBIDDEN: any_container.coords_to_point(x, y)
+❌ FORBIDDEN: bar_chart.get_axes().coords_to_point(x, y)
+
+✅ CORRECT: axes.coords_to_point(x, y)  # Only on actual Axes objects!
+✅ CORRECT: mobject.next_to(other, direction)  # Relative positioning
+✅ CORRECT: mobject.shift(RIGHT * 2 + UP * 1)  # Vector positioning
+
+REASON: Only Axes objects have coords_to_point(). VGroup is a container, not a coordinate system.
+
+### 🚨 TEX VS TEXT VS MATHTEX ERRORS
+❌ FORBIDDEN: Tex(r"\hat{y} = \text{Predicted Value}")  # Math mode error
+❌ FORBIDDEN: Tex("70\% Explained")  # LaTeX % escaping issues
+❌ FORBIDDEN: Text("text", size=24)  # Wrong parameter name
+
+✅ CORRECT: Text("ŷ = Predicted Value", font_size=28)  # Use Unicode
+✅ CORRECT: Text("70% Explained", font_size=28)  # No escaping needed
+✅ CORRECT: MathTex(r"\hat{y} = a + bx")  # Use MathTex for equations
+✅ CORRECT: Text("Plain text here", font_size=24)  # font_size not size
+
+REASON: Tex() requires LaTeX escaping. Text() is simpler for plain strings. Always use font_size.
+
+### 🚨 AXES CONSTRUCTOR DUPLICATE PARAMETER ERROR
+❌ FORBIDDEN: Axes(x_range=[...], y_range=[...], x_axis_config={...}, axis_config={...})
+❌ FORBIDDEN: Axes(..., axis_config={"color": BLUE}, x_axis_config={"color": RED})
+
+✅ CORRECT: Axes(x_range=[...], y_range=[...], axis_config={"color": BLUE})
+✅ CORRECT: Axes(x_range=[0,10,1], y_range=[0,10,1])  # No duplicate configs
+
+REASON: axis_config and x_axis_config conflict. Use axis_config ONLY.
+
+### 🚨 FUNCTION PLOTTING PARAMETER ERRORS
+❌ FORBIDDEN: axes.plot(function, x_min=0, x_max=10)
+❌ FORBIDDEN: axes.plot(function, x_range=[0,10], y_range=[0,5])
+
+✅ CORRECT: axes.plot(function, x_range=[0, 10], color=RED)
+✅ CORRECT: axes.plot(lambda x: x**2, x_range=[0, 10, 0.1])  # With step
+
+REASON: plot() uses x_range (not x_min/x_max). No y_range parameter - auto-calculated.
+
+### 🚨 ARC ANGLE PARAMETER AMBIGUITY
+❌ AVOID: Arc(angle=2.4)  # Is this radians or degrees?
+
+✅ CORRECT: Arc(angle=120*DEGREES, start_angle=0)  # Explicit degrees
+✅ CORRECT: Arc(angle=TAU/3, start_angle=0)  # Explicit radians
+
+REASON: Default unit is radians. Multiply by DEGREES for clarity.
+
+### 🚨 SCENE CLEANUP ERRORS
+❌ FORBIDDEN: self.clear()  # Without checking
+❌ FORBIDDEN: vgroup.clear()  # VGroup has NO clear() method!
+
+✅ CORRECT: if hasattr(self, 'mobjects') and self.mobjects: self.clear()
+✅ CORRECT: if self.labeler: self.labeler.clear_labels()  # VoiceoverScene
+✅ CORRECT: self.remove(*vgroup)  # Remove VGroup contents, don't clear()
+
+REASON: Always check before clearing. VGroup has no clear() method.
+
+### 🚨 VOICEOVER TIMING DESYNC
+❌ AVOID: with self.voiceover(...) as tracker: self.play(anim, run_time=10)  # Too long!
+❌ AVOID: with self.voiceover(...) as tracker: self.wait(5)  # Causes desync
+
+✅ CORRECT: with self.voiceover(...) as tracker: self.play(anim, run_time=tracker.duration * 0.5)
+✅ CORRECT: Sum of all run_times ≈ tracker.duration
+
+REASON: Animations must fit within voiceover duration to avoid audio desync.
+
+### 🚨 COLOR CONSTANT ERRORS
+❌ AVOID: color=DARK_BLUE  # May not exist
+❌ AVOID: color="#FF0000"  # String hex sometimes fails
+❌ AVOID: color=(255, 0, 0)  # RGB 0-255 format not standard
+
+✅ CORRECT: color=BLUE  # Standard Manim colors
+✅ CORRECT: color=BLUE_D  # Dark variant (_D suffix)
+✅ CORRECT: color=rgb_to_color([1.0, 0.0, 0.0])  # RGB 0.0-1.0
+
+REASON: Use standard color constants. RGB uses 0.0-1.0 scale, not 0-255.
+
 VALIDATION CHECKLIST:
 ✓ NO ```python anywhere
 ✓ NO section headers like [[ ## ]]
@@ -706,4 +828,12 @@ VALIDATION CHECKLIST:
 ✓ ALL MathTex objects use proper syntax with raw strings
 ✓ NO pass statements or empty method bodies
 ✓ ALL methods have complete implementations with real Manim objects
+✓ NEVER use coords_to_point() on BarChart or VGroup
+✓ NEVER use DashedStroke - use DashedVMobject instead
+✓ Use Text() for plain strings, MathTex() for equations
+✓ Use font_size parameter, not size
+✓ NO duplicate axis_config parameters in Axes()
+✓ Use x_range in plot(), not x_min/x_max or y_range
+✓ Check mobjects exist before self.clear()
+✓ Always multiply angles by DEGREES for clarity
 

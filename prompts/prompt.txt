@@ -12,6 +12,7 @@ ABSOLUTE FORBIDDEN ELEMENTS:
 ❌ NEVER use ANY_VARIABLE.clear() if it's a VGroup - causes instant failure!
 ❌ NEVER use \max(lpha x, x) - LaTeX ERROR: Incomplete \alpha causes compilation failure!
 ❌ NEVER use pass statements in method bodies - FORBIDDEN: Every method needs full implementation!
+❌ NEVER pass duplicate parameters to Axes() - Axes(x_range=..., x_range=...) causes multiple values error!
 
 MANDATORY OUTPUT FORMAT:
 ✅ START immediately with: from manim import *
@@ -463,6 +464,71 @@ def create_safe_line(self, axes, slope, intercept, color=GREEN):
 # - Runtime must meet minimum requirements
 # - Core educational goals must be addressed
 
+# AXES CONSTRUCTOR ERROR PREVENTION - CRITICAL
+# 🚨 CRITICAL: Axes() constructor cannot receive duplicate parameters
+
+# ❌ FORBIDDEN AXES PATTERNS THAT CAUSE "multiple values for keyword argument" ERROR:
+# - Axes(x_range=[0,5,1], y_range=[0,5,1], x_range=[0,10,1])  # x_range twice
+# - Axes([0,5,1], [0,5,1], x_range=[0,10,1])  # positional and keyword x_range
+# - Axes(x_range=[0,5,1], [0,5,1])  # mixed positional/keyword ranges
+# - Axes([0,5,1], y_range=[0,5,1], x_range=[0,10,1])  # confusing mix
+
+# ✅ CORRECT AXES PATTERNS - GUARANTEED TO WORK:
+# - Axes(x_range=[0, 5, 1], y_range=[0, 5, 1])  # Clean keyword arguments
+# - Axes([0, 5, 1], [0, 5, 1])  # Clean positional arguments  
+# - Axes(x_range=[0, 5, 1], y_range=[0, 5, 1], axis_config={"color": BLUE})  # Additional params OK
+
+# MANDATORY AXES VALIDATION RULES:
+# ✓ Never pass x_range or y_range more than once
+# ✓ Use either all positional OR all keyword arguments for ranges
+# ✓ Check for parameter conflicts before Axes() constructor
+# ✓ Use axis_config for styling, not duplicate range parameters
+# ✓ Test Axes creation patterns before using in complex scenes
+
+# GET_AREA() METHOD ERROR PREVENTION - CRITICAL
+# 🚨 CRITICAL: get_area() method requires a 'graph' parameter
+
+# ❌ FORBIDDEN GET_AREA PATTERNS THAT CAUSE "missing required positional argument 'graph'" ERROR:
+# - axes.get_area(x_range=[0, 5])  # Missing graph parameter
+# - axes.get_area(color=BLUE)  # Missing graph parameter
+# - coord_system.get_area(x_range=[0, 5], opacity=0.3)  # Missing graph parameter
+
+# ✅ CORRECT GET_AREA PATTERNS - GUARANTEED TO WORK:
+# - axes.get_area(graph, x_range=[0, 5])  # Provide graph first
+# - axes.get_area(line_graph, x_range=[0, 5], color=BLUE)  # Graph + styling
+# - axes.get_area(func_graph, x_range=[a, b], opacity=0.5)  # Function graph area
+
+# MANDATORY GET_AREA VALIDATION RULES:
+# ✓ Always provide a graph object as first parameter
+# ✓ Graph must be created before calling get_area()
+# ✓ Use axes.plot() or similar to create graph objects
+# ✓ Check graph object exists before get_area() call
+# ✓ Test get_area() patterns with actual graph objects
+
+# BARCHART CONSTRUCTOR ERROR PREVENTION - CRITICAL
+# 🚨 CRITICAL: BarChart in Manim v0.19+ does NOT accept x_range or y_range parameters
+# These parameters cause "got multiple values for keyword argument 'x_range'" error
+
+# ❌ FORBIDDEN BARCHART PATTERNS THAT CAUSE TypeError:
+# - BarChart(values=[...], x_range=[0, 10])  # x_range not accepted
+# - BarChart(values=[...], y_range=[0, 100])  # y_range not accepted  
+# - BarChart(values=[...], x_range=[...], y_range=[...])  # Both not accepted
+# - BarChart(values=[...], axis_config={"x_range": [...]})  # Still causes error
+
+# ✅ CORRECT BARCHART PATTERNS FOR MANIM v0.19+:
+# - BarChart(values=[1, 2, 3, 4, 5])  # Only values required
+# - BarChart(values=[...], bar_colors=[BLUE, RED, GREEN])  # With colors
+# - BarChart(values=[...], bar_names=["A", "B", "C"])  # With labels
+# - chart = BarChart(values=[...]); axes = chart.get_axes()  # Access underlying axes
+
+# CRITICAL RULES:
+# ✓ BarChart auto-generates x_range and y_range from values
+# ✓ Use bar_colors to customize bar colors
+# ✓ Use bar_names for x-axis labels
+# ✓ Access axes via chart.get_axes() if needed
+# ✓ BarChart inherits from Axes but manages ranges internally
+# ✓ Never pass x_range or y_range to BarChart constructor
+
 # AUTO-UPDATING COMPATIBILITY
 
 ## Version Adaptability
@@ -487,10 +553,435 @@ def safe_axes_creation(self, x_range, y_range, **kwargs):
         axes.shift_to_origin()
         return axes
 
+## DashedVMobject and Stroke Styles (Manim v0.19+ Breaking Changes)
+
+### CRITICAL: Dashed Line API Changes
+# ❌ FORBIDDEN - Old Manim v0.17 API:
+#   from manim import DashedStroke
+#   line.stroke_style = DashedStroke()
+#   line.set_stroke(dash_length=0.1)
+#   line.set_stroke(dash_ratio=0.5)
+
+# ✅ CORRECT - Manim v0.19+ API:
+#   from manim import DashedVMobject
+#   dashed_line = DashedVMobject(original_mobject, num_dashes=10)
+#   dashed_line = DashedVMobject(original_mobject, dashed_ratio=0.5)
+
+### Critical Rules for Dashed Lines:
+1. **DashedStroke class does not exist** in Manim v0.19+
+2. **set_stroke() does NOT accept dash_length or dash_ratio parameters**
+3. **Use DashedVMobject wrapper** to create dashed versions of any VMobject
+4. **DashedVMobject parameters**:
+   - `vmobject`: The original VMobject to make dashed
+   - `num_dashes`: Number of dashes (optional, default=15)
+   - `dashed_ratio`: Ratio of dash to gap (optional, default=0.5)
+   - `color`: Override color (optional)
+
+### Safe Dashed Line Examples:
+```python
+# For simple lines
+original_line = Line(start, end, color=RED)
+dashed_line = DashedVMobject(original_line, num_dashes=10)
+
+# For function plots
+original_plot = axes.plot(lambda x: x**2, color=BLUE)
+dashed_plot = DashedVMobject(original_plot, dashed_ratio=0.6)
+
+# For extrapolation visualization
+extrapolation = axes.plot(lambda x: slope * x + intercept, x_range=[5, 10], color=RED)
+dashed_extrapolation = DashedVMobject(extrapolation, num_dashes=15)
+```
+
+## Coordinate System and Positioning (Manim v0.19+ Changes)
+
+### CRITICAL: coords_to_point Access Patterns
+# ❌ FORBIDDEN - Incorrect access patterns:
+#   bar_chart.get_axes().coords_to_point(x, y)  # get_axes() returns VGroup, not Axes!
+#   bar_chart.axes.coords_to_point(x, y)  # No direct axes attribute
+#   histogram.x_axis.coords_to_point(x, 0)  # No direct axis access
+
+# ✅ CORRECT - Safe positioning alternatives:
+#   # Use absolute positioning with .next_to(), .shift(), .move_to()
+#   text.next_to(mobject, direction)
+#   text.shift(RIGHT * 2 + UP * 1)
+#   text.move_to(specific_point)
+#   
+#   # For actual Axes objects (not BarChart):
+#   axes = Axes(x_range=[0, 10], y_range=[0, 10])
+#   point = axes.coords_to_point(5, 5)  # This works for Axes
+
+### Critical Rules for Positioning:
+1. **BarChart does NOT have accessible coordinate system** for coords_to_point()
+2. **Use relative positioning** (.next_to(), .shift(), .to_edge(), .to_corner())
+3. **Create separate Axes** if you need coordinate transformations
+4. **BarChart.bars** contains individual Rectangle VMobjects, not coordinate info
+
+### Safe Positioning Examples:
+```python
+# For BarChart annotations - use relative positioning
+bar_chart = BarChart(values=[1, 2, 3, 4], bar_colors=[BLUE])
+mean_text = Text(f"Mean = {mean:.1f}", color=RED).next_to(bar_chart, UP)
+std_text = Text(f"Std Dev = {std:.2f}", color=GREEN).next_to(mean_text, DOWN)
+
+# For Axes-based positioning - create actual Axes
+axes = Axes(x_range=[0, 10], y_range=[0, 10])
+point = Dot(axes.coords_to_point(5, 5), color=YELLOW)
+line_start = axes.coords_to_point(2, 3)
+line_end = axes.coords_to_point(8, 7)
+```
+
+## Arc and Circle API (Manim v0.19+ Changes)
+
+### CRITICAL: Arc angle parameter changes
+# ❌ FORBIDDEN - Old API:
+#   Arc(angle=2.4, start_angle=0*DEGREES)  # May cause issues
+
+# ✅ CORRECT - Manim v0.19+ API:
+#   Arc(angle=2.4*DEGREES, start_angle=0)  # Use DEGREES multiplier
+#   Arc(angle=TAU/3, start_angle=0)  # Or use radians with TAU/PI
+
+### Critical Rules for Arcs:
+1. **Angle parameters use radians by default**
+2. **Multiply by DEGREES** if you want degree units
+3. **Use TAU** (2*PI) for full circle, TAU/2 for semicircle
+4. **start_angle** defaults to 0 (pointing right)
+
+### Safe Arc Examples:
+```python
+# Pie chart portion
+pie_slice = Arc(angle=120*DEGREES, start_angle=0, radius=2, color=BLUE, fill_opacity=0.5)
+
+# Semicircle
+semicircle = Arc(angle=TAU/2, radius=1.5, color=RED)
+
+# Three-quarter circle
+three_quarters = Arc(angle=270*DEGREES, start_angle=0, color=GREEN)
+```
+
+## Animation Timing and Synchronization
+
+### CRITICAL: VoiceoverScene timing patterns
+# ❌ AVOID - Animations exceeding voiceover duration:
+#   with self.voiceover(text="Short text") as tracker:
+#       self.play(Animation1, run_time=10)  # Much longer than speech!
+
+# ✅ CORRECT - Distribute animations within duration:
+#   with self.voiceover(text="Your narration here") as tracker:
+#       self.play(Animation1, run_time=tracker.duration * 0.5)
+#       self.play(Animation2, run_time=tracker.duration * 0.5)
+
+### Critical Rules for Timing:
+1. **Sum of animation run_times should ≈ tracker.duration**
+2. **Use tracker.duration multipliers** (0.3, 0.5, 0.7) for distribution
+3. **Add small buffer time** with self.wait(0.5) between scenes
+4. **Avoid self.wait() inside voiceover blocks** (causes audio desync)
+
+## Transform and Animation API
+
+### CRITICAL: Transform target requirements
+# ❌ FORBIDDEN - Transform to non-existent or incompatible objects:
+#   self.play(Transform(mobject1, None))  # No target!
+#   self.play(Transform(text, axes))  # Incompatible types
+
+# ✅ CORRECT - Transform between compatible objects:
+#   self.play(Transform(line1, line2))  # Both Lines
+#   self.play(ReplacementTransform(text1, text2))  # Better for different types
+#   self.play(FadeOut(old), FadeIn(new))  # Safest for any types
+
+### Critical Rules for Transforms:
+1. **Transform requires compatible source and target** (same base class)
+2. **Use ReplacementTransform** for different object types
+3. **Use FadeOut/FadeIn** as safest alternative
+4. **Check target exists and is valid** before Transform
+
 ## Future-Proof Patterns
 # - Use feature detection instead of version checking
 # - Implement graceful fallbacks for new/changed APIs
 # - Maintain backward compatibility where possible
+
+## Common VMobject Method Changes (Manim v0.19+)
+
+### CRITICAL: VGroup and Mobject Collection Access
+# ❌ FORBIDDEN - Incorrect collection assumptions:
+#   vgroup = some_mobject.get_axes()  # Might return VGroup, not Axes
+#   vgroup.coords_to_point(x, y)  # VGroup has no coords_to_point!
+#   mobject.bars[0][0]  # Deep nested access without checking structure
+
+# ✅ CORRECT - Safe collection handling:
+#   if isinstance(result, Axes):
+#       point = result.coords_to_point(x, y)
+#   elif isinstance(result, VGroup):
+#       # Use alternative positioning
+#       point = some_mobject.get_center() + RIGHT * 2
+
+### Critical Rules for Collections:
+1. **VGroup is a container, not a geometric object** - no coordinate methods
+2. **Check type before calling geometry methods** (coords_to_point, get_length, etc.)
+3. **BarChart returns complex structures** - avoid deep nested indexing
+4. **Use .get_center(), .get_corner()** for safe positioning on any VMobject
+
+## NumberPlane and Grid API Changes
+
+### CRITICAL: Background plane parameters
+# ❌ FORBIDDEN - Old parameter names:
+#   NumberPlane(x_min=-5, x_max=5, y_min=-3, y_max=3)  # Deprecated
+#   NumberPlane(x_line_frequency=1, y_line_frequency=1)  # Changed
+
+# ✅ CORRECT - Manim v0.19+ API:
+#   NumberPlane(x_range=[-5, 5, 1], y_range=[-3, 3, 1])
+#   NumberPlane(x_length=10, y_length=6)  # For custom size
+
+### Safe NumberPlane Examples:
+```python
+# Standard coordinate plane
+plane = NumberPlane(
+    x_range=[-10, 10, 1],
+    y_range=[-6, 6, 1],
+    background_line_style={"stroke_color": BLUE_D, "stroke_width": 1}
+)
+
+# Custom sized plane
+plane = NumberPlane(
+    x_range=[-5, 5, 1],
+    y_range=[-5, 5, 1],
+    x_length=8,
+    y_length=8
+)
+```
+
+## Text and MathTex Rendering
+
+### CRITICAL: Font and size parameters
+# ❌ AVOID - Inconsistent font sizing:
+#   Text("Hello", size=24)  # Wrong parameter name
+#   MathTex(r"\text{hello}", font_size=48, size=24)  # Conflicting params
+
+# ✅ CORRECT - Consistent parameter names:
+#   Text("Hello", font_size=24)
+#   MathTex(r"\text{hello}", font_size=48)
+#   Tex("Hello", font_size=36)
+
+### Critical Rules for Text:
+1. **Use font_size parameter** (not size, not scale)
+2. **Default font_size is 48** - adjust relative to this
+3. **Use .scale() after creation** for proportional sizing
+4. **Wrap text in r-strings** for MathTex: r"\text{content}"
+
+### Safe Text Examples:
+```python
+# Regular text with sizing
+title = Text("Linear Regression", font_size=48, color=WHITE)
+subtitle = Text("A Visual Explanation", font_size=32, color=BLUE)
+
+# Math text with proper escaping
+equation = MathTex(r"\hat{y} = a + bx", font_size=36, color=WHITE)
+formula = MathTex(r"\mu = \frac{\sum x_i}{n}", font_size=30)
+
+# Scaling alternative
+text = Text("Important!", font_size=24).scale(1.5)  # Now 36pt equivalent
+```
+
+## Graph and Function Plotting
+
+### CRITICAL: plot() method parameters
+# ❌ FORBIDDEN - Incorrect plot parameters:
+#   axes.plot(function, x_min=0, x_max=10)  # Old parameter names
+#   axes.plot(function, color=RED, x_range=[0, 10], y_range=[0, 5])  # y_range not used
+
+# ✅ CORRECT - Manim v0.19+ plot API:
+#   axes.plot(function, x_range=[0, 10], color=RED)
+#   axes.plot(function, x_range=[0, 10, 0.1], color=RED)  # With step size
+#   axes.plot(lambda x: x**2, color=BLUE)  # Uses Axes default range
+
+### Critical Rules for Plotting:
+1. **Use x_range=[min, max] or [min, max, step]** (not x_min/x_max)
+2. **y_range parameter does NOT exist** for plot() - it's calculated automatically
+3. **Use lambda functions** for inline function definitions
+4. **Step size (3rd x_range value) controls smoothness** (default: 0.01)
+
+### Safe Plotting Examples:
+```python
+# Basic function plot
+axes = Axes(x_range=[0, 10], y_range=[0, 100])
+line = axes.plot(lambda x: 5 * x + 60, color=RED)
+
+# Custom range and smoothness
+curve = axes.plot(lambda x: x**2, x_range=[0, 5, 0.05], color=BLUE)
+
+# Multiple plots on same axes
+line1 = axes.plot(lambda x: 2*x, x_range=[0, 10], color=RED)
+line2 = axes.plot(lambda x: -x + 10, x_range=[0, 10], color=GREEN)
+
+# Piecewise plotting for extrapolation
+main_line = axes.plot(lambda x: 3*x + 5, x_range=[0, 5], color=RED)
+dashed_extrap = DashedVMobject(
+    axes.plot(lambda x: 3*x + 5, x_range=[5, 10], color=RED),
+    num_dashes=10
+)
+```
+
+## Scene Cleanup and Memory Management
+
+### CRITICAL: Proper scene clearing
+# ❌ AVOID - Incomplete cleanup:
+#   self.clear()  # Might leave orphaned mobjects
+#   self.remove(*self.mobjects)  # Doesn't clear internal state
+
+# ✅ CORRECT - Complete cleanup pattern:
+#   if hasattr(self, 'mobjects') and self.mobjects:
+#       self.clear()
+#   if self.labeler:  # For VoiceoverScene
+#       self.labeler.clear_labels()
+
+### Critical Rules for Scene Management:
+1. **Always check mobjects exist** before clearing
+2. **Clear VoiceoverScene labels** after each scene
+3. **Group scene elements** in VGroup for easy tracking
+4. **FadeOut before clear** for smooth transitions
+
+### Safe Scene Cleanup Examples:
+```python
+def scene_1(self):
+    # Clear previous scene
+    if hasattr(self, 'mobjects') and self.mobjects:
+        self.clear()
+    
+    # Create and track elements
+    with self.voiceover(text="...") as tracker:
+        title = Text("Scene 1")
+        axes = Axes(...)
+        all_elements = VGroup(title, axes)
+        
+        self.play(Create(all_elements), run_time=tracker.duration)
+    
+    # Clean exit
+    if hasattr(self, 'mobjects') and all_elements in self.mobjects:
+        self.play(FadeOut(all_elements))
+    if self.labeler:
+        self.labeler.clear_labels()
+```
+
+## Color Constants and Values
+
+### CRITICAL: Color naming and access
+# ❌ AVOID - Invalid color references:
+#   color=DARK_BLUE  # Might not exist
+#   color="#FF0000"  # String hex not always supported
+#   color=(255, 0, 0)  # RGB 0-255 format not standard
+
+# ✅ CORRECT - Safe color usage:
+#   color=BLUE  # Standard Manim colors
+#   color=BLUE_D  # Dark variant (_D suffix)
+#   color=BLUE_E  # Darker variant (_E suffix)
+#   color=rgb_to_color([1.0, 0.0, 0.0])  # RGB 0.0-1.0 format
+#   color=hex_to_rgb("#FF0000")  # Hex with converter
+
+### Safe Color Examples:
+```python
+# Standard colors (always safe)
+title = Text("Title", color=WHITE)
+subtitle = Text("Subtitle", color=BLUE)
+warning = Text("Warning", color=YELLOW)
+
+# Color variants
+primary = Text("Primary", color=BLUE_C)  # Medium blue
+secondary = Text("Secondary", color=BLUE_D)  # Dark blue
+tertiary = Text("Tertiary", color=BLUE_E)  # Darker blue
+
+# Custom colors (use converters)
+from manim import rgb_to_color
+custom = Text("Custom", color=rgb_to_color([0.8, 0.2, 0.5]))
+```
+
+## MANIM v0.19+ ERROR PREVENTION CHECKLIST
+
+### Before Generating Code - Verify These Patterns:
+
+**1. Axes Constructor:**
+   - ✅ Use: `Axes(x_range=[min, max, step], y_range=[min, max, step])`
+   - ❌ Never: Duplicate `axis_config` in both Axes() and individual axis parameters
+
+**2. BarChart Constructor:**
+   - ✅ Use: `BarChart(values=[...], bar_colors=[...])`
+   - ❌ Never: Add `x_range`, `y_range`, or `axis_config` parameters
+
+**3. Dashed Lines:**
+   - ✅ Use: `DashedVMobject(original_mobject, num_dashes=10)`
+   - ❌ Never: `DashedStroke()`, `set_stroke(dash_length=...)`, `dash_ratio` parameter
+
+**4. Coordinate Positioning:**
+   - ✅ Use: `Axes.coords_to_point()` only on Axes objects
+   - ❌ Never: `BarChart.get_axes().coords_to_point()` (returns VGroup!)
+   - ✅ Alternative: Use `.next_to()`, `.shift()`, `.move_to()` for positioning
+
+**5. Function Plotting:**
+   - ✅ Use: `axes.plot(function, x_range=[min, max], color=...)`
+   - ❌ Never: `x_min`, `x_max`, or `y_range` parameters in plot()
+
+**6. Text Sizing:**
+   - ✅ Use: `Text("...", font_size=24)`
+   - ❌ Never: `size` parameter (use `font_size` instead)
+
+**7. Arc Angles:**
+   - ✅ Use: `Arc(angle=120*DEGREES, ...)` or `Arc(angle=TAU/3, ...)`
+   - ❌ Be careful: Default unit is radians, multiply by DEGREES for degrees
+
+**8. Scene Cleanup:**
+   - ✅ Always: Check `if hasattr(self, 'mobjects') and self.mobjects:` before clear()
+   - ✅ Always: Clear voiceover labels with `if self.labeler: self.labeler.clear_labels()`
+
+**9. Color Usage:**
+   - ✅ Use: Standard colors (WHITE, BLUE, RED, GREEN, YELLOW, etc.)
+   - ✅ Use: Variants with suffixes (_C, _D, _E for shades)
+   - ❌ Avoid: Custom strings without rgb_to_color() converter
+
+**10. Voiceover Timing:**
+   - ✅ Use: `run_time=tracker.duration * ratio` to distribute animations
+   - ✅ Ensure: Sum of all run_times ≈ tracker.duration
+   - ❌ Never: Use self.wait() inside voiceover blocks (causes desync)
+
+### Common TypeError Prevention:
+```python
+# SAFE PATTERN - Always works in Manim v0.19+
+def create_safe_visualization(self):
+    # Axes with correct parameters
+    axes = Axes(
+        x_range=[0, 10, 1],
+        y_range=[0, 100, 10],
+        axis_config={"color": BLUE}  # Only here, not in individual axes
+    )
+    
+    # BarChart without forbidden parameters
+    histogram = BarChart(
+        values=[65, 70, 75, 80, 85],
+        bar_colors=[BLUE, BLUE, BLUE, BLUE, BLUE]
+    )
+    
+    # Dashed line using DashedVMobject
+    original_line = axes.plot(lambda x: 2*x + 5, x_range=[0, 10], color=RED)
+    dashed_line = DashedVMobject(original_line, num_dashes=15)
+    
+    # Text with correct font_size parameter
+    label = Text("Safe Visualization", font_size=36, color=WHITE)
+    
+    # Positioning without coords_to_point on BarChart
+    mean_text = Text("Mean = 75.0", font_size=24, color=RED)
+    mean_text.next_to(histogram, UP)  # Relative positioning is safe
+    
+    return VGroup(axes, histogram, dashed_line, label, mean_text)
+```
+
+### Quick Reference - Manim v0.19+ Safe APIs:
+
+| Feature | ✅ CORRECT v0.19+ | ❌ FORBIDDEN (old) |
+|---------|------------------|-------------------|
+| Axes | `x_range=[0,10,1]` | `x_min=0, x_max=10` |
+| BarChart | `values=[...], bar_colors=[...]` | `x_range=[...], y_range=[...]` |
+| Dashed | `DashedVMobject(mob, num_dashes=10)` | `DashedStroke()`, `dash_length` |
+| Plot | `plot(func, x_range=[0,10])` | `x_min=0, x_max=10, y_range=[...]` |
+| Text Size | `font_size=24` | `size=24` |
+| Angles | `angle=120*DEGREES` | `angle=2.1` (ambiguous) |
+| Positioning | `.next_to(), .shift()` | `.coords_to_point()` on non-Axes |
 
 # INPUT INTEGRATION DIRECTIVES
 
@@ -950,6 +1441,95 @@ VGROUP VARIABLE NAMES - NEVER USE .clear() ON ANY OF THESE:
 ❌ FORBIDDEN: animations.clear()
 ❌ FORBIDDEN: components.clear()
 ❌ FORBIDDEN: any_variable_name.clear() if it's a VGroup
+
+## ⚠️ CRITICAL ERROR PREVENTION - QUICK REFERENCE CHECKLIST ⚠️
+
+### 🚨 TOP 10 ERRORS TO PREVENT (ZERO TOLERANCE)
+
+1. **BARCHART COORDS_TO_POINT ERROR**
+   ❌ NEVER: `histogram.get_axes().coords_to_point(x, y)`
+   ✅ USE: `text.next_to(bar_chart, UP)` (relative positioning)
+   
+2. **DASHEDSTROKE REMOVED ERROR**
+   ❌ NEVER: `DashedStroke()` or `set_stroke(dash_length=...)`
+   ✅ USE: `DashedVMobject(original_mobject, num_dashes=10)`
+   
+3. **VGROUP CLEAR() ERROR**
+   ❌ NEVER: `vgroup.clear()` (VGroup has no clear() method!)
+   ✅ USE: `self.remove(*vgroup)` or just reassign the variable
+   
+4. **TEX VS TEXT LATEX ERRORS**
+   ❌ NEVER: `Tex("70\% Explained")` (LaTeX escaping issues)
+   ✅ USE: `Text("70% Explained", font_size=28)` (no escaping)
+   
+5. **FONT SIZE PARAMETER ERROR**
+   ❌ NEVER: `Text("Hello", size=24)` (wrong parameter)
+   ✅ USE: `Text("Hello", font_size=24)` (correct parameter)
+   
+6. **AXES DUPLICATE PARAMETER ERROR**
+   ❌ NEVER: `Axes(..., axis_config={...}, x_axis_config={...})`
+   ✅ USE: `Axes(..., axis_config={...})` (only one config)
+   
+7. **PLOT Y_RANGE ERROR**
+   ❌ NEVER: `axes.plot(func, x_range=[0,10], y_range=[0,5])`
+   ✅ USE: `axes.plot(func, x_range=[0,10])` (no y_range param)
+   
+8. **BARCHART X_RANGE/Y_RANGE ERROR**
+   ❌ NEVER: `BarChart(values=[...], x_range=[...], y_range=[...])`
+   ✅ USE: `BarChart(values=[...], bar_colors=[...])` (auto-generates ranges)
+   
+9. **SCENE CLEAR WITHOUT CHECK ERROR**
+   ❌ NEVER: `self.clear()` (without checking)
+   ✅ USE: `if hasattr(self, 'mobjects') and self.mobjects: self.clear()`
+   
+10. **COORDS_TO_POINT ON NON-AXES ERROR**
+    ❌ NEVER: Use coords_to_point() on VGroup, BarChart, or any non-Axes object
+    ✅ USE: Only call coords_to_point() on actual Axes objects
+
+### 📋 PRE-GENERATION VALIDATION (CHECK EVERY TIME)
+✓ BarChart uses ONLY bar_colors parameter (no x_range/y_range/axis_config)
+✓ All coords_to_point() calls are on Axes objects (NEVER VGroup/BarChart)
+✓ Use DashedVMobject, NOT DashedStroke
+✓ Use Text() for plain strings, MathTex() for math equations
+✓ Use font_size parameter (not size)
+✓ No duplicate axis_config in Axes()
+✓ plot() uses x_range ONLY (no x_min/x_max/y_range)
+✓ Check mobjects before self.clear()
+✓ VGroup cleanup uses self.remove(*vgroup) not vgroup.clear()
+✓ Angles multiply by DEGREES for clarity
+✓ Voiceover animations fit within tracker.duration
+✓ No pass statements in method bodies
+
+### 🎯 SAFE POSITIONING PATTERNS (ALWAYS USE THESE)
+```python
+# ✅ SAFE - Relative positioning (works on ALL mobjects)
+obj.next_to(other, UP)           # Above
+obj.next_to(other, DOWN)         # Below
+obj.shift(RIGHT * 2 + UP * 1)   # Vector offset
+obj.to_edge(UP)                  # Screen edge
+obj.to_corner(UL)                # Screen corner
+obj.move_to(ORIGIN)              # Absolute position
+
+# ✅ SAFE - Coordinate positioning (ONLY on Axes!)
+axes = Axes(x_range=[0,10], y_range=[0,10])
+point = axes.coords_to_point(5, 5)  # Works ONLY on Axes
+
+# ❌ UNSAFE - These WILL cause errors
+bar_chart.get_axes().coords_to_point(x, y)  # VGroup error!
+vgroup.coords_to_point(x, y)  # AttributeError!
+```
+
+### 🔧 QUICK FIX REFERENCE
+| Error | Wrong Pattern | Correct Pattern |
+|-------|--------------|-----------------|
+| BarChart TypeError | `BarChart(..., x_range=[...])` | `BarChart(values=[...], bar_colors=[...])` |
+| VGroup coords | `vgroup.coords_to_point(x,y)` | `text.next_to(vgroup, UP)` |
+| DashedStroke | `DashedStroke()` | `DashedVMobject(mob, num_dashes=10)` |
+| Text size | `Text("hi", size=24)` | `Text("hi", font_size=24)` |
+| LaTeX escape | `Tex("70\% ok")` | `Text("70% ok", font_size=24)` |
+| Plot range | `plot(f, x_min=0, x_max=10)` | `plot(f, x_range=[0,10])` |
+| Axes config | `Axes(..., axis_config={}, x_axis_config={})` | `Axes(..., axis_config={})` |
+| VGroup clear | `vgroup.clear()` | `self.remove(*vgroup)` |
 
 MANDATORY OUTPUT PATTERN:
 from manim import *

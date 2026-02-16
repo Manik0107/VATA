@@ -20,7 +20,7 @@ def run_code_and_get_logs(code_file: str):
         # Specify the scene name to avoid interactive prompts
         # Using -pql for preview quality and low resolution for faster testing
         result = subprocess.run(
-            ["manim", "-pql", code_file, "IntroductionAnimation", "--disable_caching"],
+            ["manim", "-pql", code_file, "GenScene", "--disable_caching"],
             capture_output=True,
             text=True,
             check=False,  # Don't raise exception; we capture it manually
@@ -116,7 +116,7 @@ Here is the code and the runtime logs:"""),
 
 correction_chain = correction_prompt | llm
 
-CODE_FILE = "generated_animation_dspy.py"
+CODE_FILE = "generated_agno_manim.py"
 
 def load_code():
     return Path(CODE_FILE).read_text()

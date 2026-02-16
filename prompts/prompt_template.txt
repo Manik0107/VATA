@@ -1,0 +1,488 @@
+PRIMARY OUTPUT DIRECTIVE
+Generate ONLY executable Python code for Manim Community v0.19+.
+
+from manim import *
+import numpy as np
+import random
+import os
+from manim_voiceover import VoiceoverScene
+from manim_voiceover.services.gtts import GTTSService 
+
+def to3(p):
+    p = np.array(p, dtype=float).reshape(-1)
+    if p.shape[0] == 2: return np.array([p[0], p[1], 0.0])
+    if p.shape[0] == 3: return p.astype(float)
+    return np.array([p[0], p[1], 0.0]) if len(p) >= 2 else np.array([0.0, 0.0, 0.0])
+
+def to3Nx(points):
+    arr = np.array(points, dtype=float)
+    if arr.ndim == 1: return to3(arr).reshape(1, 3)
+    if arr.ndim == 2:
+        if arr.shape[1] >= 2:
+            if arr.shape[1] == 2:
+                return np.hstack([arr, np.zeros((arr.shape[0], 1))])
+            return arr[:, :3] if arr.shape[1] >= 3 else arr
+    return np.array([[0.0, 0.0, 0.0]])
+
+from manim import BLUE, RED, GREEN, GOLD, YELLOW, WHITE, GREY_B, GREY_C, PURPLE, PINK, ORANGE, TEAL, BLACK
+
+def safe_color(c, fallback=BLUE):
+    valid_colors = [BLUE, RED, GREEN, GOLD, YELLOW, WHITE, GREY_B, GREY_C, PURPLE, PINK, ORANGE, TEAL, BLACK]
+    if c in valid_colors: return c
+    if isinstance(c, (tuple, list)) and len(c) >= 3: return tuple(float(v) for v in c[:3])
+    return fallback
+
+def safe_position_above(obj, distance=1):
+    return obj.get_center() + UP * distance
+
+def safe_position_below(obj, distance=1):
+    return obj.get_center() + DOWN * distance
+
+def safe_position_left(obj, distance=1):
+    return obj.get_center() + LEFT * distance
+
+def safe_position_right(obj, distance=1):
+    return obj.get_center() + RIGHT * distance
+
+def create_text_around_object(text_content, obj, direction="above", font_size=20):
+    text_obj = Text(text_content, font_size=font_size)
+    if direction == "above":
+        text_obj.next_to(obj, UP, buff=0.5)
+    elif direction == "below":
+        text_obj.next_to(obj, DOWN, buff=0.5)
+    elif direction == "left":
+        text_obj.next_to(obj, LEFT, buff=0.5)
+    elif direction == "right":
+        text_obj.next_to(obj, RIGHT, buff=0.5)
+    else:
+        text_obj.move_to(obj.get_center() + UP * 1.5)
+    return text_obj
+
+def safe_create_animation(obj):
+    try:
+        return Create(obj)
+    except:
+        return FadeIn(obj)
+
+def load_image_safe(self, image_path, scale=0.5, position=RIGHT*3):
+    try:
+        img = ImageMobject(image_path)
+        img.scale(scale)
+        img.move_to(position)
+        return img
+    except Exception as e:
+        print(f"Warning: Could not load image {image_path}. Error: {e}. Using placeholder.")
+        placeholder = Rectangle(width=2, height=1.5, color=GREY_B).move_to(position)
+        text = Text("Image", font_size=24).move_to(position)
+        return Group(placeholder, text)
+
+def create_safe_scatter(self, x_data, y_data, color=YELLOW):
+    try:
+        x_arr = np.array(x_data, dtype=float)
+        y_arr = np.array(y_data, dtype=float)
+        points = to3Nx(np.column_stack([x_arr, y_arr]))
+        return VGroup(*[Dot(point=p, color=safe_color(color), radius=0.04) for p in points])
+    except:
+        return VGroup(*[Dot(np.array([i, i, 0]), color=safe_color(color)) for i in range(3)])
+
+def create_safe_line(self, axes, slope, intercept, color=GREEN):
+    try:
+        line = axes.plot(lambda x: slope*x + intercept, color=safe_color(color))
+        return line
+    except:
+        p1 = to3([axes.x_range[0], slope*axes.x_range[0] + intercept])
+        p2 = to3([axes.x_range[1], slope*axes.x_range[1] + intercept])
+        return Line(p1, p2, color=safe_color(color))
+
+def safe_axes_creation(self, x_range, y_range, **kwargs):
+    try:
+        axes = Axes(x_range=x_range, y_range=y_range, **kwargs)
+        axes.move_to(ORIGIN)
+        return axes
+    except TypeError:
+        axes = Axes(x_range=x_range, y_range=y_range)
+        axes.shift_to_origin()
+        return axes
+    except Exception as e:
+        print(f"Error creating axes, using generic fallback: {e}")
+        axes = Axes()
+        axes.shift_to_origin()
+        return axes
+
+class UniversalLabelingSystem:
+    def __init__(self, scene):
+        self.scene = scene
+        self.label_group = VGroup()
+    
+    def clear_labels(self):
+        for mobject in list(self.label_group.submobjects):
+            self.label_group.remove(mobject)
+
+    def create_smart_label(self, obj, text, direction=UP, buff=0.3, color=WHITE, font_size=24):
+        label = Text(text, font_size=font_size, color=color)
+        
+        if np.array_equal(direction, UP):
+            label.next_to(obj, UP, buff=buff)
+        elif np.array_equal(direction, DOWN):
+            label.next_to(obj, DOWN, buff=buff)
+        elif np.array_equal(direction, LEFT):
+            label.next_to(obj, LEFT, buff=buff)
+        elif np.array_equal(direction, RIGHT):
+            label.next_to(obj, RIGHT, buff=buff)
+        else:
+            label.next_to(obj, direction, buff=buff)
+        
+        self.label_group.add(label)
+        return label
+
+    def animate_labels_in(self, lag_ratio=0.1, **kwargs):
+        if self.label_group:
+            self.scene.play(LaggedStart(*(FadeIn(mob) for mob in self.label_group), lag_ratio=lag_ratio), **kwargs)
+
+    def animate_labels_out(self, lag_ratio=0.1, **kwargs):
+        if self.label_group:
+            self.scene.play(LaggedStart(*(FadeOut(mob) for mob in self.label_group), lag_ratio=lag_ratio), **kwargs)
+
+class GeneratedEducationalScene(VoiceoverScene):
+    def construct(self):
+        self.set_speech_service(GTTSService())
+        self.labeler = UniversalLabelingSystem(self)
+        
+        self.show_introduction()
+        self.explain_relu_and_leaky_relu()
+        self.compare_activation_functions()
+        self.show_mathematical_derivation()
+        self.demonstrate_graph_comparison()
+        self.summarize_key_points()
+    
+    def show_introduction(self):
+        if self.mobjects: self.clear()
+        
+        with self.voiceover(text="Welcome to this lesson on Activation Functions in Neural Networks.") as tracker:
+            title = Text("Activation Functions", font_size=48, color=BLUE).to_edge(UP)
+            subtitle = Text("ReLU vs. Leaky ReLU", font_size=36, color=WHITE).next_to(title, DOWN)
+            self.play(Write(title), run_time=tracker.duration * 0.6)
+            self.play(FadeIn(subtitle), run_time=tracker.duration * 0.4)
+            self.wait(0.5)
+        
+        with self.voiceover(text="These functions introduce non-linearity, allowing neural networks to learn complex patterns.") as tracker:
+            intro_text = Text("Enabling Non-Linearity", font_size=30, color=YELLOW).next_to(subtitle, DOWN, buff=1.0)
+            self.play(FadeIn(intro_text), run_time=tracker.duration)
+            self.wait(1)
+        
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))
+
+    def explain_relu_and_leaky_relu(self):
+        if self.mobjects: self.clear()
+        
+        # Axes for the functions
+        axes = Axes(
+            x_range=[-3, 3, 1],
+            y_range=[-1, 3, 1],
+            x_length=7,
+            y_length=5,
+            axis_config={"color": GREY_B, "include_numbers": True},
+        ).to_edge(LEFT).shift(RIGHT*1.5)
+        
+        x_label = axes.get_x_axis().add_numbers().set_color(WHITE)
+        y_label = axes.get_y_axis().add_numbers().set_color(WHITE)
+        
+        graph_group = VGroup(axes, x_label, y_label)
+        
+        with self.voiceover(text="Let's start with the Rectified Linear Unit, or ReLU. It's defined as the maximum of zero and x.") as tracker:
+            self.play(Create(graph_group), run_time=tracker.duration * 0.4)
+            
+            relu_func = axes.plot(lambda x: np.maximum(0, x), color=GREEN)
+            relu_label_formula = MathTex(r"f(x) = \max(0, x)", font_size=36, color=GREEN).next_to(axes, UP, buff=0.8)
+            relu_label_text = Text("ReLU Function", font_size=28, color=GREEN).next_to(relu_label_formula, DOWN)
+            
+            self.play(Create(relu_func), Write(relu_label_formula), FadeIn(relu_label_text), run_time=tracker.duration * 0.6)
+            self.wait(0.5)
+
+        with self.voiceover(text="ReLU outputs zero for negative inputs, which can lead to the 'dying ReLU' problem where neurons become inactive.") as tracker:
+            dying_text = Text("Issue: Dying ReLU", font_size=24, color=RED).next_to(relu_label_text, DOWN, buff=0.5)
+            dying_arrow = Arrow(dying_text.get_top(), axes.coords_to_point(-1, 0), color=RED, buff=0.2)
+            self.play(FadeIn(dying_text, dying_arrow), run_time=tracker.duration)
+            self.wait(1)
+        
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))
+        
+        if self.mobjects: self.clear()
+        
+        # Recreate axes for Leaky ReLU
+        axes = Axes(
+            x_range=[-3, 3, 1],
+            y_range=[-1, 3, 1],
+            x_length=7,
+            y_length=5,
+            axis_config={"color": GREY_B, "include_numbers": True},
+        ).to_edge(LEFT).shift(RIGHT*1.5)
+        
+        x_label = axes.get_x_axis().add_numbers().set_color(WHITE)
+        y_label = axes.get_y_axis().add_numbers().set_color(WHITE)
+        
+        graph_group = VGroup(axes, x_label, y_label)
+        self.add(graph_group) # Add without animation for continuity
+        
+        with self.voiceover(text="To address this, Leaky ReLU introduces a small positive slope for negative inputs, typically denoted by alpha.") as tracker:
+            alpha_val = 0.1
+            leaky_relu_func = axes.plot(lambda x: np.maximum(alpha_val * x, x), color=YELLOW)
+            leaky_relu_label_formula = MathTex(r"f(x) = \max(\alpha x, x)", font_size=36, color=YELLOW).next_to(axes, UP, buff=0.8)
+            leaky_relu_label_text = Text("Leaky ReLU Function", font_size=28, color=YELLOW).next_to(leaky_relu_label_formula, DOWN)
+            alpha_definition = MathTex(r"\alpha = 0.1", font_size=24, color=TEAL).next_to(leaky_relu_label_text, DOWN)
+            
+            self.play(Create(leaky_relu_func), Write(leaky_relu_label_formula), FadeIn(leaky_relu_label_text), FadeIn(alpha_definition), run_time=tracker.duration * 0.8)
+            
+            leaky_explanation = Text("Small slope for x < 0", font_size=24, color=WHITE).next_to(alpha_definition, DOWN, buff=0.5)
+            self.play(FadeIn(leaky_explanation), run_time=tracker.duration * 0.2)
+            self.wait(1)
+
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))
+
+    def compare_activation_functions(self):
+        if self.mobjects: self.clear()
+        
+        # Table of comparison
+        table_data = [
+            ["ReLU", "f(x) = max(0, x)", "Simple, Efficient", "Dying ReLU Problem"],
+            ["Leaky ReLU", "f(x) = max(\alpha x, x)", "Prevents Dying ReLU", "Requires Tuning \alpha"]
+        ]
+        
+        table_labels = VGroup(
+            Text("Function", font_size=24, color=WHITE),
+            Text("Formula", font_size=24, color=WHITE),
+            Text("Advantages", font_size=24, color=GREEN),
+            Text("Disadvantages", font_size=24, color=RED)
+        )
+        
+        with self.voiceover(text="Here is a quick comparison between ReLU and Leaky ReLU.") as tracker:
+            comparison_title = Text("ReLU vs. Leaky ReLU Comparison", font_size=36, color=GOLD).to_edge(UP)
+            
+            table = Table(
+                table_data,
+                row_labels=[Text("ReLU", font_size=20), Text("Leaky ReLU", font_size=20)],
+                col_labels=table_labels,
+                include_outer_lines=True,
+                element_to_mobject=lambda s: MathTex(s, font_size=20) if "max" in s or "\alpha" in s else Text(s, font_size=20)
+            ).scale(0.6).next_to(comparison_title, DOWN, buff=0.5)
+            
+            self.play(Write(comparison_title), Create(table), run_time=tracker.duration)
+            self.wait(1)
+        
+        with self.voiceover(text="ReLU is simple but can suffer from dead neurons. Leaky ReLU solves this but adds an additional hyperparameter to tune.") as tracker:
+            relu_adv = table.add_highlighted_cell((2, 3), color=GREEN) # ReLU Advantage
+            relu_disadv = table.add_highlighted_cell((2, 4), color=RED) # ReLU Disadvantage
+            leaky_relu_adv = table.add_highlighted_cell((3, 3), color=GREEN) # Leaky ReLU Advantage
+            leaky_relu_disadv = table.add_highlighted_cell((3, 4), color=RED) # Leaky ReLU Disadvantage
+            
+            self.play(FadeIn(relu_adv, relu_disadv, leaky_relu_adv, leaky_relu_disadv), run_time=tracker.duration)
+            self.wait(1)
+
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))
+
+    def show_mathematical_derivation(self):
+        if self.mobjects: self.clear()
+        
+        with self.voiceover(text="Let's look at the derivatives of these functions, crucial for backpropagation.") as tracker:
+            derivation_title = Text("Mathematical Derivations", font_size=48, color=PURPLE).to_edge(UP)
+            self.play(Write(derivation_title), run_time=tracker.duration)
+            self.wait(0.5)
+
+        with self.voiceover(text="For ReLU, the derivative is 1 for positive x, and 0 for negative x. It's undefined at x equals 0.") as tracker:
+            relu_deriv_formula = MathTex(
+                r"f'(x) = \begin{cases} 1 & \text{if } x > 0 \\ 0 & \text{if } x < 0 \\ \text{undefined} & \text{if } x = 0 \end{cases}",
+                font_size=40, color=GREEN
+            ).shift(UP*1)
+            relu_deriv_label = Text("ReLU Derivative", font_size=28, color=GREEN).next_to(relu_deriv_formula, DOWN)
+            
+            self.play(FadeIn(relu_deriv_formula, relu_deriv_label), run_time=tracker.duration)
+            self.wait(1)
+
+        with self.voiceover(text="For Leaky ReLU, the derivative is 1 for positive x, and alpha for negative x. This ensures a non-zero gradient.") as tracker:
+            leaky_relu_deriv_formula = MathTex(
+                r"f'(x) = \begin{cases} 1 & \text{if } x > 0 \\ \alpha & \text{if } x < 0 \\ \text{undefined} & \text{if } x = 0 \end{cases}",
+                font_size=40, color=YELLOW
+            ).next_to(relu_deriv_formula, DOWN, buff=1.0)
+            leaky_relu_deriv_label = Text("Leaky ReLU Derivative", font_size=28, color=YELLOW).next_to(leaky_relu_deriv_formula, DOWN)
+            
+            self.play(FadeIn(leaky_relu_deriv_formula, leaky_relu_deriv_label), run_time=tracker.duration)
+            self.wait(1)
+            
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))
+
+    def demonstrate_graph_comparison(self):
+        if self.mobjects: self.clear()
+        
+        with self.voiceover(text="Let's visualize both functions on the same graph to clearly see their differences.") as tracker:
+            graph_title = Text("Visual Comparison", font_size=48, color=GOLD).to_edge(UP)
+            self.play(Write(graph_title), run_time=tracker.duration)
+            self.wait(0.5)
+
+        axes = Axes(
+            x_range=[-3, 3, 1],
+            y_range=[-1, 3, 1],
+            x_length=10,
+            y_length=7,
+            axis_config={"color": GREY_B, "include_numbers": True},
+        ).to_edge(DOWN).shift(UP*1)
+        
+        x_label = axes.get_x_axis().add_numbers().set_color(WHITE)
+        y_label = axes.get_y_axis().add_numbers().set_color(WHITE)
+        
+        self.play(Create(VGroup(axes, x_label, y_label)), run_time=tracker.duration * 0.3)
+        
+        relu_func = axes.plot(lambda x: np.maximum(0, x), color=GREEN)
+        leaky_relu_func = axes.plot(lambda x: np.maximum(0.1 * x, x), color=YELLOW)
+        
+        relu_label = Text("ReLU", color=GREEN, font_size=28).next_to(axes.coords_to_point(2,2), UP, buff=0.2)
+        leaky_relu_label = Text("Leaky ReLU", color=YELLOW, font_size=28).next_to(axes.coords_to_point(-2,-0.2), DOWN, buff=0.2)
+        
+        with self.voiceover(text="Here, ReLU is shown in green, setting negative values to zero.") as tracker:
+            self.play(Create(relu_func), Write(relu_label), run_time=tracker.duration)
+            self.wait(0.5)
+
+        with self.voiceover(text="Leaky ReLU, in yellow, allows a small gradient for negative values, preventing neuron deactivation.") as tracker:
+            self.play(Create(leaky_relu_func), Write(leaky_relu_label), run_time=tracker.duration)
+            self.wait(1)
+            
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))
+
+    def summarize_key_points(self):
+        if self.mobjects: self.clear()
+        
+        with self.voiceover(text="In summary, ReLU is simple and computationally efficient, but prone to the dying ReLU problem.") as tracker:
+            summary_title = Text("Key Takeaways", font_size=48, color=TEAL).to_edge(UP)
+            point1 = Text("ReLU: Simple, efficient, but dying ReLU problem.", font_size=32, color=GREEN).next_to(summary_title, DOWN, buff=1.0)
+            self.play(Write(summary_title), FadeIn(point1), run_time=tracker.duration)
+            self.wait(0.5)
+
+        with self.voiceover(text="Leaky ReLU addresses this by introducing a small gradient for negative inputs, keeping neurons active during training.") as tracker:
+            point2 = Text("Leaky ReLU: Prevents dying ReLU, maintains gradients.", font_size=32, color=YELLOW).next_to(point1, DOWN, buff=0.5)
+            self.play(FadeIn(point2), run_time=tracker.duration)
+            self.wait(0.5)
+            
+        with self.voiceover(text="The choice between them depends on the specific task and how much you're willing to tune hyperparameters.") as tracker:
+            point3 = Text("Choice depends on task and hyperparameter tuning tolerance.", font_size=32, color=WHITE).next_to(point2, DOWN, buff=0.5)
+            self.play(FadeIn(point3), run_time=tracker.duration)
+            self.wait(2)
+        
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))
+
+## ⚠️ CRITICAL ERROR PREVENTION - MANIM v0.19+ BREAKING CHANGES ⚠️
+
+### 🚨 BARCHART API ERRORS - ZERO TOLERANCE
+❌ FORBIDDEN: BarChart(values=[...], x_range=[...], y_range=[...])
+❌ FORBIDDEN: BarChart(values=[...], axis_config={...})
+❌ FORBIDDEN: histogram.get_axes().coords_to_point(x, y)
+❌ FORBIDDEN: bar_chart.axes.coords_to_point(x, y)
+
+✅ CORRECT: BarChart(values=[...], bar_colors=[...])
+✅ CORRECT: text.next_to(bar_chart, UP)  # Use relative positioning ONLY
+✅ CORRECT: Display statistics as Text objects, NOT geometric visualizations
+
+REASON: BarChart in v0.19+ auto-generates ranges. get_axes() returns VGroup (NO coords_to_point!)
+
+### 🚨 DASHED LINE ERRORS - ZERO TOLERANCE
+❌ FORBIDDEN: from manim import DashedStroke
+❌ FORBIDDEN: line.stroke_style = DashedStroke()
+❌ FORBIDDEN: line.set_stroke(dash_length=0.1)
+❌ FORBIDDEN: line.set_stroke(dash_ratio=0.5)
+
+✅ CORRECT: from manim import DashedVMobject
+✅ CORRECT: dashed = DashedVMobject(original_mobject, num_dashes=10)
+✅ CORRECT: dashed = DashedVMobject(axes.plot(func, ...), dashed_ratio=0.5)
+
+REASON: DashedStroke class removed in v0.19+. Use DashedVMobject wrapper.
+
+### 🚨 VGROUP COORDS_TO_POINT ERROR - ZERO TOLERANCE
+❌ FORBIDDEN: vgroup.coords_to_point(x, y)
+❌ FORBIDDEN: any_container.coords_to_point(x, y)
+❌ FORBIDDEN: bar_chart.get_axes().coords_to_point(x, y)
+
+✅ CORRECT: axes.coords_to_point(x, y)  # Only on actual Axes objects!
+✅ CORRECT: mobject.next_to(other, direction)  # Relative positioning
+✅ CORRECT: mobject.shift(RIGHT * 2 + UP * 1)  # Vector positioning
+
+REASON: Only Axes objects have coords_to_point(). VGroup is a container, not a coordinate system.
+
+### 🚨 TEX VS TEXT VS MATHTEX ERRORS
+❌ FORBIDDEN: Tex(r"\hat{y} = \text{Predicted Value}")  # Math mode error
+❌ FORBIDDEN: Tex("70\% Explained")  # LaTeX % escaping issues
+❌ FORBIDDEN: Text("text", size=24)  # Wrong parameter name
+
+✅ CORRECT: Text("ŷ = Predicted Value", font_size=28)  # Use Unicode
+✅ CORRECT: Text("70% Explained", font_size=28)  # No escaping needed
+✅ CORRECT: MathTex(r"\hat{y} = a + bx")  # Use MathTex for equations
+✅ CORRECT: Text("Plain text here", font_size=24)  # font_size not size
+
+REASON: Tex() requires LaTeX escaping. Text() is simpler for plain strings. Always use font_size.
+
+### 🚨 AXES CONSTRUCTOR DUPLICATE PARAMETER ERROR
+❌ FORBIDDEN: Axes(x_range=[...], y_range=[...], x_axis_config={...}, axis_config={...})
+❌ FORBIDDEN: Axes(..., axis_config={"color": BLUE}, x_axis_config={"color": RED})
+
+✅ CORRECT: Axes(x_range=[...], y_range=[...], axis_config={"color": BLUE})
+✅ CORRECT: Axes(x_range=[0,10,1], y_range=[0,10,1])  # No duplicate configs
+
+REASON: axis_config and x_axis_config conflict. Use axis_config ONLY.
+
+### 🚨 FUNCTION PLOTTING PARAMETER ERRORS
+❌ FORBIDDEN: axes.plot(function, x_min=0, x_max=10)
+❌ FORBIDDEN: axes.plot(function, x_range=[0,10], y_range=[0,5])
+
+✅ CORRECT: axes.plot(function, x_range=[0, 10], color=RED)
+✅ CORRECT: axes.plot(lambda x: x**2, x_range=[0, 10, 0.1])  # With step
+
+REASON: plot() uses x_range (not x_min/x_max). No y_range parameter - auto-calculated.
+
+### 🚨 ARC ANGLE PARAMETER AMBIGUITY
+❌ AVOID: Arc(angle=2.4)  # Is this radians or degrees?
+
+✅ CORRECT: Arc(angle=120*DEGREES, start_angle=0)  # Explicit degrees
+✅ CORRECT: Arc(angle=TAU/3, start_angle=0)  # Explicit radians
+
+REASON: Default unit is radians. Multiply by DEGREES for clarity.
+
+### 🚨 SCENE CLEANUP ERRORS
+❌ FORBIDDEN: self.clear()  # Without checking
+❌ FORBIDDEN: vgroup.clear()  # VGroup has NO clear() method!
+
+✅ CORRECT: if hasattr(self, 'mobjects') and self.mobjects: self.clear()
+✅ CORRECT: if self.labeler: self.labeler.clear_labels()  # VoiceoverScene
+✅ CORRECT: self.remove(*vgroup)  # Remove VGroup contents, don't clear()
+
+REASON: Always check before clearing. VGroup has no clear() method.
+
+### 🚨 VOICEOVER TIMING DESYNC
+❌ AVOID: with self.voiceover(...) as tracker: self.play(anim, run_time=10)  # Too long!
+❌ AVOID: with self.voiceover(...) as tracker: self.wait(5)  # Causes desync
+
+✅ CORRECT: with self.voiceover(...) as tracker: self.play(anim, run_time=tracker.duration * 0.5)
+✅ CORRECT: Sum of all run_times ≈ tracker.duration
+
+REASON: Animations must fit within voiceover duration to avoid audio desync.
+
+### 🚨 COLOR CONSTANT ERRORS
+❌ AVOID: color=DARK_BLUE  # May not exist
+❌ AVOID: color="#FF0000"  # String hex sometimes fails
+❌ AVOID: color=(255, 0, 0)  # RGB 0-255 format not standard
+
+✅ CORRECT: color=BLUE  # Standard Manim colors
+✅ CORRECT: color=BLUE_D  # Dark variant (_D suffix)
+✅ CORRECT: color=rgb_to_color([1.0, 0.0, 0.0])  # RGB 0.0-1.0
+
+REASON: Use standard color constants. RGB uses 0.0-1.0 scale, not 0-255.
+
+## FINAL VALIDATION CHECKLIST BEFORE CODE GENERATION:
+✓ NEVER use coords_to_point() on BarChart or VGroup
+✓ NEVER use DashedStroke - use DashedVMobject instead
+✓ Use Text() for plain strings, MathTex() for equations
+✓ Use font_size parameter, not size
+✓ NO duplicate axis_config parameters in Axes()
+✓ Use x_range in plot(), not x_min/x_max or y_range
+✓ Check mobjects exist before self.clear()
+✓ Always multiply angles by DEGREES for clarity
+✓ BarChart uses bar_colors ONLY - no x_range/y_range
+✓ Use relative positioning (.next_to, .shift) for BarChart annotations
+✓ VGroup has no clear() method - use self.remove(*vgroup)
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))

@@ -1,0 +1,528 @@
+MANIM COMMUNITY v0.19+ API REFERENCE - STEM TOPICS
+==================================================
+
+⚠️ CRITICAL RULES - READ FIRST
+================================
+
+1. DEPRECATED CONSTANTS (NEVER USE):
+   ❌ FRAME_WIDTH, FRAME_HEIGHT → Use: config.frame_width, config.frame_height
+   ❌ TOP, BOTTOM, LEFT_SIDE, RIGHT_SIDE → Use: UP, DOWN, LEFT, RIGHT
+   ❌ ORIGIN is OK, but UP, DOWN, LEFT, RIGHT are preferred for positioning
+
+2. CAMERA OPERATIONS:
+   ❌ self.camera.frame (only exists in MovingCameraScene)
+   ✅ For base Scene: Just use positioning methods like .to_edge(), .shift(), .move_to()
+   ✅ If you need camera zoom: Change to class MovingCameraScene(Scene)
+
+3. POSITIONING METHODS:
+   ❌ obj.to_center()  # This method does NOT exist!
+   ✅ obj.move_to(ORIGIN)  # Correct way to center
+3. POSITIONING METHODS:
+   ❌ obj.to_center()  # This method does NOT exist!
+   ✅ obj.move_to(ORIGIN)  # Correct way to center
+   ✅ obj.center()  # Also works
+
+   ✅ obj.center()  # Also works
+   
+4. FUNCTION PLOTTING:
+   ❌ axes.get_line_from_func(lambda x: x**2, x_range=[0, 10])  # Wrong!
+   ✅ axes.plot(lambda x: x**2, x_range=[0, 10])  # Correct modern API
+   ✅ axes.plot(lambda x: x**2, (0, 10))  # Also works
+
+5. MOBJECT OPERATIONS:
+   ❌ text1 + text2  # Cannot concatenate with +
+   ✅ VGroup(text1, text2)  # Use VGroup instead
+
+
+═══════════════════════════════════════════════════════════
+SECTION 1: SETUP & IMPORTS
+═══════════════════════════════════════════════════════════
+
+from manim import *
+import numpy as np
+
+class MyScene(Scene):
+    def construct(self):
+        # Set background
+        self.camera.background_color = "#1e1e1e"
+
+
+═══════════════════════════════════════════════════════════
+SECTION 2: MATHEMATICAL OBJECTS
+═══════════════════════════════════════════════════════════
+
+2.1 TEXT & LABELS
+-----------------
+title = Text("Linear Regression", font_size=48, color=WHITE)
+subtitle = Text("Subtitle", font_size=24, color=GRAY)
+title.to_edge(UP)
+
+2.2 LATEX EQUATIONS
+-------------------
+equation = MathTex(r"y = mx + b", font_size=64)
+complex_eq = MathTex(
+    r"\frac{d}{dx}",
+    r"(x^2)",
+    r"=",
+    r"2x",
+    font_size=48
+)
+# Color specific parts
+complex_eq.set_color_by_tex("2x", YELLOW)
+
+2.3 AXES & GRAPHS
+-----------------
+# NumberPlane (2D coordinate system)
+axes = Axes(
+    x_range=[-3, 3, 1],  # [min, max, step]
+    y_range=[-2, 2, 0.5],
+    x_length=8,
+    y_length=6,
+    axis_config={"color": BLUE},
+)
+
+# Add labels
+x_label = axes.get_x_axis_label("x")
+y_label = axes.get_y_axis_label("y")
+
+# Plot functions
+parabola = axes.plot(lambda x: x**2, color=RED)
+sine = axes.plot(np.sin, x_range=[-PI, PI], color=GREEN)
+
+# Plot with specific range
+line = axes.plot(lambda x: 2*x + 1, x_range=[-2, 2], color=YELLOW)
+
+# Get coordinates
+point = axes.coords_to_point(2, 4)  # (x, y) -> screen position
+dot = Dot(point, color=RED)
+
+2.4 NUMBER LINE
+---------------
+number_line = NumberLine(
+    x_range=[0, 10, 1],
+    length=10,
+    include_numbers=True
+)
+
+
+═══════════════════════════════════════════════════════════
+SECTION 3: SHAPES & GEOMETRY
+═══════════════════════════════════════════════════════════
+
+3.1 BASIC SHAPES
+----------------
+circle = Circle(radius=1, color=BLUE, fill_opacity=0.5)
+square = Square(side_length=2, color=RED)
+rect = Rectangle(width=4, height=2, color=GREEN)
+triangle = Triangle(color=YELLOW)
+
+3.2 LINES & ARROWS
+------------------
+line = Line(start=LEFT*2, end=RIGHT*2, color=WHITE)
+arrow = Arrow(start=ORIGIN, end=UP*2, color=RED, buff=0)
+dashed = DashedLine(start=LEFT, end=RIGHT, color=BLUE)
+
+# Arrows between objects
+arrow_between = Arrow(circle.get_right(), square.get_left(), buff=0.1)
+
+3.3 POLYGONS
+------------
+pentagon = RegularPolygon(n=5, color=PURPLE)
+custom = Polygon(
+    UP, 
+    DOWN + LEFT, 
+    DOWN + RIGHT, 
+    color=ORANGE, 
+    fill_opacity=0.7
+)
+
+3.4 VECTORS (Physics/Math)
+--------------------------
+vector = Arrow(ORIGIN, RIGHT*3 + UP*2, buff=0, color=GREEN)
+vector_label = MathTex(r"\vec{v}").next_to(vector.get_end(), UP)
+
+
+═══════════════════════════════════════════════════════════
+SECTION 4: POSITIONING & LAYOUT
+═══════════════════════════════════════════════════════════
+
+4.1 ABSOLUTE POSITIONING
+------------------------
+obj.move_to(ORIGIN)
+obj.move_to(UP*2 + RIGHT*3)
+obj.move_to(circle.get_center())
+
+4.2 RELATIVE POSITIONING
+------------------------
+obj.next_to(other_obj, UP, buff=0.5)  # directions: UP, DOWN, LEFT, RIGHT
+obj.shift(LEFT*2)
+obj.to_edge(UP, buff=0.5)
+obj.to_corner(UL)  # corners: UL, UR, DL, DR
+
+4.3 ALIGNMENT IN GROUPS
+-----------------------
+group = VGroup(obj1, obj2, obj3)
+group.arrange(RIGHT, buff=1.0)  # Arrange horizontally with spacing
+group.arrange(DOWN, buff=0.5)   # Arrange vertically
+
+# Center the group
+group.move_to(ORIGIN)
+
+4.4 SCALING & ROTATION
+----------------------
+obj.scale(2)  # Double size
+obj.scale(0.5)  # Half size
+obj.rotate(PI/4)  # Rotate 45 degrees
+obj.rotate(PI/2, about_point=ORIGIN)
+
+
+═══════════════════════════════════════════════════════════
+SECTION 5: ANIMATIONS
+═══════════════════════════════════════════════════════════
+
+5.1 BASIC ANIMATIONS
+--------------------
+self.play(FadeIn(obj))
+self.play(FadeOut(obj))
+self.play(Write(text))
+self.play(Create(shape))
+self.play(Uncreate(shape))
+
+5.2 TRANSFORMATIONS
+-------------------
+self.play(Transform(obj1, obj2))
+self.play(ReplacementTransform(obj1, obj2))
+self.play(obj.animate.shift(UP*2))
+self.play(obj.animate.scale(2).rotate(PI/4))
+
+5.3 COMPLEX MULTI-STEP
+----------------------
+self.play(
+    FadeIn(title),
+    Create(circle),
+    run_time=2
+)
+
+# Sequential animations
+self.play(FadeIn(obj1))
+self.wait(1)
+self.play(Transform(obj1, obj2))
+self.wait(2)
+self.play(FadeOut(obj2))
+
+5.4 TIMING CONTROL
+------------------
+self.wait(3)  # Wait 3 seconds
+self.play(animation, run_time=5)  # Animation takes 5 seconds
+self.play(animation, rate_func=linear)  # Constant speed
+
+
+═══════════════════════════════════════════════════════════
+SECTION 6: COLORS & STYLING
+═══════════════════════════════════════════════════════════
+
+6.1 BUILT-IN COLORS
+-------------------
+RED, GREEN, BLUE, YELLOW, ORANGE, PURPLE, PINK
+WHITE, BLACK, GRAY, LIGHT_GRAY, DARK_GRAY
+TEAL, MAROON, GOLD
+
+6.2 CUSTOM COLORS
+-----------------
+custom_color = "#00f2ea"  # Hex code
+obj.set_color(custom_color)
+
+6.3 OPACITY & FILL
+------------------
+circle.set_fill(BLUE, opacity=0.5)
+circle.set_stroke(RED, width=4)
+
+
+═══════════════════════════════════════════════════════════
+SECTION 7: PHYSICS DIAGRAMS
+═══════════════════════════════════════════════════════════
+
+7.1 FORCE VECTORS
+-----------------
+mass = Circle(radius=0.5, color=GRAY, fill_opacity=1)
+force = Arrow(mass.get_top(), mass.get_top() + UP*2, color=RED, buff=0)
+force_label = MathTex(r"F").next_to(force, RIGHT)
+
+7.2 COORDINATE SYSTEMS (Physics)
+---------------------------------
+axes = ThreeDAxes(
+    x_range=[-5, 5],
+    y_range=[-5, 5],
+    z_range=[-5, 5]
+)
+
+
+═══════════════════════════════════════════════════════════
+SECTION 8: ENGINEERING DIAGRAMS
+═══════════════════════════════════════════════════════════
+
+8.1 CIRCUIT ELEMENTS (Abstract)
+--------------------------------
+resistor = Rectangle(width=1, height=0.3, color=WHITE)
+wire1 = Line(start=LEFT*2, end=resistor.get_left())
+wire2 = Line(start=resistor.get_right(), end=RIGHT*2)
+
+8.2 BLOCK DIAGRAMS
+------------------
+input_box = Rectangle(width=2, height=1, color=BLUE)
+input_label = Text("Input").scale(0.5).move_to(input_box)
+input_block = VGroup(input_box, input_label)
+
+process_box = Rectangle(width=2, height=1, color=GREEN)
+process_label = Text("Process").scale(0.5).move_to(process_box)
+process_block = VGroup(process_box, process_label)
+
+arrow = Arrow(input_block.get_right(), process_block.get_left(), buff=0.1)
+
+system = VGroup(input_block, arrow, process_block).arrange(RIGHT, buff=1)
+
+
+═══════════════════════════════════════════════════════════
+SECTION 9: DATA VISUALIZATION
+═══════════════════════════════════════════════════════════
+
+9.1 SCATTER PLOTS
+-----------------
+data = [(1, 2), (2, 3.5), (3, 4), (4, 5.5), (5, 6)]
+dots = VGroup(*[
+    Dot(axes.coords_to_point(x, y), color=BLUE)
+    for x, y in data
+])
+
+9.2 BAR CHARTS (Manual)
+-----------------------
+bars = VGroup()
+for i, height in enumerate([2, 4, 3, 5]):
+    bar = Rectangle(
+        width=0.5,
+        height=height,
+        color=BLUE,
+        fill_opacity=0.7
+    )
+    bar.move_to(axes.coords_to_point(i, height/2))
+    bars.add(bar)
+
+
+═══════════════════════════════════════════════════════════
+SECTION 10: COMMON PATTERNS
+═══════════════════════════════════════════════════════════
+
+10.1 HIGHLIGHTING
+-----------------
+self.play(obj.animate.set_color(YELLOW))
+self.play(obj.animate.scale(1.5))
+
+10.2 INDICATING
+---------------
+self.play(Indicate(obj, color=RED))
+self.play(Flash(point, color=YELLOW))
+
+10.3 CLEANUP
+------------
+self.play(
+    FadeOut(obj1),
+    FadeOut(obj2),
+    FadeOut(obj3)
+)
+# Or: self.play(*[FadeOut(obj) for obj in objects])
+
+
+═══════════════════════════════════════════════════════════
+SECTION 11: COMMON PITFALLS (WHAT WE FIXED)
+═══════════════════════════════════════════════════════════
+
+❌ WRONG: Rectangle(width=FRAME_WIDTH, ...)
+✅ RIGHT: Rectangle(width=config.frame_width, ...)
+
+❌ WRONG: self.camera.frame.animate.scale(0.7)  # In Scene
+✅ RIGHT: Use MovingCameraScene OR remove zoom
+
+❌ WRONG: Text("Price ($") + MathTex(")")
+✅ RIGHT: Text("Price ($)")
+
+❌ WRONG: axes.get_line_from_func(lambda x: x**2, x_range=[0, 10])
+✅ RIGHT: axes.plot(lambda x: x**2, x_range=[0, 10])
+
+❌ WRONG: axes.get_line_from_func(lambda x: x**2, x_range=[0, 10])
+✅ RIGHT: axes.plot(lambda x: x**2, (0, 10))
+
+
+═══════════════════════════════════════════════════════════
+SECTION 12: COMPLETE EXAMPLE (LINEAR REGRESSION)
+═══════════════════════════════════════════════════════════
+
+class LinearRegressionExample(Scene):
+    def construct(self):
+        # Setup
+        self.camera.background_color = "#1e1e1e"
+        
+        # Create axes
+        axes = Axes(
+            x_range=[0, 10, 1],
+            y_range=[0, 15, 2],
+            x_length=8,
+            y_length=6,
+            axis_config={"color": BLUE}
+        ).shift(DOWN*0.5)
+        
+        # Labels
+        x_label = axes.get_x_axis_label("Size")
+        y_label = axes.get_y_axis_label("Price")
+        
+        # Data points
+        data = [(2, 4), (4, 7), (6, 9), (8, 12)]
+        dots = VGroup(*[
+            Dot(axes.coords_to_point(x, y), color=CYAN)
+            for x, y in data
+        ])
+        
+        # Regression line
+        line = axes.plot(lambda x: 1.5*x + 1, x_range=[1, 9], color=RED)
+        
+        # Animate
+        self.play(Create(axes), Write(x_label), Write(y_label))
+        self.wait(1)
+        self.play(FadeIn(dots, lag_ratio=0.1))
+        self.wait(1)
+        self.play(Create(line))
+        self.wait(2)
+        
+        # Cleanup
+        self.play(
+            FadeOut(axes),
+            FadeOut(x_label),
+            FadeOut(y_label),
+            FadeOut(dots),
+            FadeOut(line)
+        )
+
+
+═══════════════════════════════════════════════════════════
+END OF MANIM v0.19+ RULES
+═══════════════════════════════════════════════════════════
+
+Remember: When in doubt, use .plot() for functions, VGroup for grouping,
+and avoid deprecated constants. Test with --dry_run first!
+## ⚠️ CRITICAL ERROR PREVENTION - MANIM v0.19+ BREAKING CHANGES ⚠️
+
+### 🚨 BARCHART API ERRORS - ZERO TOLERANCE
+❌ FORBIDDEN: BarChart(values=[...], x_range=[...], y_range=[...])
+❌ FORBIDDEN: BarChart(values=[...], axis_config={...})
+❌ FORBIDDEN: histogram.get_axes().coords_to_point(x, y)
+❌ FORBIDDEN: bar_chart.axes.coords_to_point(x, y)
+
+✅ CORRECT: BarChart(values=[...], bar_colors=[...])
+✅ CORRECT: text.next_to(bar_chart, UP)  # Use relative positioning ONLY
+✅ CORRECT: Display statistics as Text objects, NOT geometric visualizations
+
+REASON: BarChart in v0.19+ auto-generates ranges. get_axes() returns VGroup (NO coords_to_point!)
+
+### 🚨 DASHED LINE ERRORS - ZERO TOLERANCE
+❌ FORBIDDEN: from manim import DashedStroke
+❌ FORBIDDEN: line.stroke_style = DashedStroke()
+❌ FORBIDDEN: line.set_stroke(dash_length=0.1)
+❌ FORBIDDEN: line.set_stroke(dash_ratio=0.5)
+
+✅ CORRECT: from manim import DashedVMobject
+✅ CORRECT: dashed = DashedVMobject(original_mobject, num_dashes=10)
+✅ CORRECT: dashed = DashedVMobject(axes.plot(func, ...), dashed_ratio=0.5)
+
+REASON: DashedStroke class removed in v0.19+. Use DashedVMobject wrapper.
+
+### 🚨 VGROUP COORDS_TO_POINT ERROR - ZERO TOLERANCE
+❌ FORBIDDEN: vgroup.coords_to_point(x, y)
+❌ FORBIDDEN: any_container.coords_to_point(x, y)
+❌ FORBIDDEN: bar_chart.get_axes().coords_to_point(x, y)
+
+✅ CORRECT: axes.coords_to_point(x, y)  # Only on actual Axes objects!
+✅ CORRECT: mobject.next_to(other, direction)  # Relative positioning
+✅ CORRECT: mobject.shift(RIGHT * 2 + UP * 1)  # Vector positioning
+
+REASON: Only Axes objects have coords_to_point(). VGroup is a container, not a coordinate system.
+
+### 🚨 TEX VS TEXT VS MATHTEX ERRORS
+❌ FORBIDDEN: Tex(r"\hat{y} = \text{Predicted Value}")  # Math mode error
+❌ FORBIDDEN: Tex("70\% Explained")  # LaTeX % escaping issues
+❌ FORBIDDEN: Text("text", size=24)  # Wrong parameter name
+
+✅ CORRECT: Text("ŷ = Predicted Value", font_size=28)  # Use Unicode
+✅ CORRECT: Text("70% Explained", font_size=28)  # No escaping needed
+✅ CORRECT: MathTex(r"\hat{y} = a + bx")  # Use MathTex for equations
+✅ CORRECT: Text("Plain text here", font_size=24)  # font_size not size
+
+REASON: Tex() requires LaTeX escaping. Text() is simpler for plain strings. Always use font_size.
+
+### 🚨 AXES CONSTRUCTOR DUPLICATE PARAMETER ERROR
+❌ FORBIDDEN: Axes(x_range=[...], y_range=[...], x_axis_config={...}, axis_config={...})
+❌ FORBIDDEN: Axes(..., axis_config={"color": BLUE}, x_axis_config={"color": RED})
+
+✅ CORRECT: Axes(x_range=[...], y_range=[...], axis_config={"color": BLUE})
+✅ CORRECT: Axes(x_range=[0,10,1], y_range=[0,10,1])  # No duplicate configs
+
+REASON: axis_config and x_axis_config conflict. Use axis_config ONLY.
+
+### 🚨 FUNCTION PLOTTING PARAMETER ERRORS
+❌ FORBIDDEN: axes.plot(function, x_min=0, x_max=10)
+❌ FORBIDDEN: axes.plot(function, x_range=[0,10], y_range=[0,5])
+
+✅ CORRECT: axes.plot(function, x_range=[0, 10], color=RED)
+✅ CORRECT: axes.plot(lambda x: x**2, x_range=[0, 10, 0.1])  # With step
+
+REASON: plot() uses x_range (not x_min/x_max). No y_range parameter - auto-calculated.
+
+### 🚨 ARC ANGLE PARAMETER AMBIGUITY
+❌ AVOID: Arc(angle=2.4)  # Is this radians or degrees?
+
+✅ CORRECT: Arc(angle=120*DEGREES, start_angle=0)  # Explicit degrees
+✅ CORRECT: Arc(angle=TAU/3, start_angle=0)  # Explicit radians
+
+REASON: Default unit is radians. Multiply by DEGREES for clarity.
+
+### 🚨 SCENE CLEANUP ERRORS
+❌ FORBIDDEN: self.clear()  # Without checking
+❌ FORBIDDEN: vgroup.clear()  # VGroup has NO clear() method!
+
+✅ CORRECT: if hasattr(self, 'mobjects') and self.mobjects: self.clear()
+✅ CORRECT: if self.labeler: self.labeler.clear_labels()  # VoiceoverScene
+✅ CORRECT: self.remove(*vgroup)  # Remove VGroup contents, don't clear()
+
+REASON: Always check before clearing. VGroup has no clear() method.
+
+### 🚨 VOICEOVER TIMING DESYNC
+❌ AVOID: with self.voiceover(...) as tracker: self.play(anim, run_time=10)  # Too long!
+❌ AVOID: with self.voiceover(...) as tracker: self.wait(5)  # Causes desync
+
+✅ CORRECT: with self.voiceover(...) as tracker: self.play(anim, run_time=tracker.duration * 0.5)
+✅ CORRECT: Sum of all run_times ≈ tracker.duration
+
+REASON: Animations must fit within voiceover duration to avoid audio desync.
+
+### 🚨 COLOR CONSTANT ERRORS
+❌ AVOID: color=DARK_BLUE  # May not exist
+❌ AVOID: color="#FF0000"  # String hex sometimes fails
+❌ AVOID: color=(255, 0, 0)  # RGB 0-255 format not standard
+
+✅ CORRECT: color=BLUE  # Standard Manim colors
+✅ CORRECT: color=BLUE_D  # Dark variant (_D suffix)
+✅ CORRECT: color=rgb_to_color([1.0, 0.0, 0.0])  # RGB 0.0-1.0
+
+REASON: Use standard color constants. RGB uses 0.0-1.0 scale, not 0-255.
+
+## FINAL VALIDATION CHECKLIST BEFORE CODE GENERATION:
+✓ NEVER use coords_to_point() on BarChart or VGroup
+✓ NEVER use DashedStroke - use DashedVMobject instead
+✓ Use Text() for plain strings, MathTex() for equations
+✓ Use font_size parameter, not size
+✓ NO duplicate axis_config parameters in Axes()
+✓ Use x_range in plot(), not x_min/x_max or y_range
+✓ Check mobjects exist before self.clear()
+✓ Always multiply angles by DEGREES for clarity
+✓ BarChart uses bar_colors ONLY - no x_range/y_range
+✓ Use relative positioning (.next_to, .shift) for BarChart annotations
+✓ VGroup has no clear() method - use self.remove(*vgroup)
+        if self.mobjects: self.play(FadeOut(VGroup(self.mobjects)))
