@@ -1,0 +1,18 @@
+[
+  {
+    "id": "intro",
+    "title": "Introduction to explain the full concept of linear regression using graphs",
+    "goal": "Introduce the topic and establish context",
+    "narration": "Welcome! Today we'll explore explain the full concept of linear regression using graphs. ",
+    "formulas": [],
+    "visuals": "Title animation with topic name"
+  },
+  {
+    "id": "outro",
+    "title": "Summary and Conclusion",
+    "goal": "Recap key points and conclude",
+    "narration": "We've explored explain the full concept of linear regression using graphs, covering the key concepts and formulas. Thank you for learning with us!",
+    "formulas": [],
+    "visuals": "Summary slide with key takeaways"
+  }
+]

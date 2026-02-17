@@ -1,0 +1,34 @@
+Generate Manim v0.19 Python code for these scene specifications.
+
+IMPORTANT RULES:
+- Use 'from manim import *' for imports
+- Each scene must be a class inheriting from Scene
+- Use construct(self) method for scene logic
+- Follow Manim v0.19 API (e.g., Write, FadeIn, Transform)
+- Include proper Wait() calls for pacing
+- Use MathTex for LaTeX formulas
+- Output ONLY valid Python code, no markdown, no explanations
+- Class names should match scene IDs in PascalCase (e.g., intro -> Intro)
+- Make animations engaging with smooth transitions
+
+Scene Specifications:
+[
+  {
+    "id": "intro",
+    "title": "Introduction to explain the full concept of linear regression using graphs",
+    "goal": "Introduce the topic and establish context",
+    "narration": "Welcome! Today we'll explore explain the full concept of linear regression using graphs. ",
+    "formulas": [],
+    "visuals": "Title animation with topic name"
+  },
+  {
+    "id": "outro",
+    "title": "Summary and Conclusion",
+    "goal": "Recap key points and conclude",
+    "narration": "We've explored explain the full concept of linear regression using graphs, covering the key concepts and formulas. Thank you for learning with us!",
+    "formulas": [],
+    "visuals": "Summary slide with key takeaways"
+  }
+]
+
+Output complete, runnable Manim code now:

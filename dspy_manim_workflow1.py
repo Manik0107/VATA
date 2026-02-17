@@ -164,7 +164,7 @@ class DocumentGroundedExtractor(dspy.Module):
         )
         
         # Analyze for concept gaps and unexplained terms
-        print("🔍 Analyzing content for knowledge gaps...")
+        print(" Analyzing content for knowledge gaps...")
         combined_content = f"""
         Topic: {topic}
         
@@ -181,7 +181,7 @@ class DocumentGroundedExtractor(dspy.Module):
         )
         
         # Generate comprehensive explanations for prerequisite concepts
-        print("📚 Generating prerequisite concept explanations...")
+        print(" Generating prerequisite concept explanations...")
         prerequisite_explanations = {}
         
         if gap_analysis.prerequisite_concepts:
@@ -196,7 +196,7 @@ class DocumentGroundedExtractor(dspy.Module):
             for concept in concepts_list[:5]:  # Limit to top 5 concepts to avoid token limits
                 if concept and len(concept.strip()) > 2:
                     try:
-                        print(f"  📖 Explaining: {concept}")
+                        print(f"   Explaining: {concept}")
                         concept_explanation = self._retry_with_backoff(
                             lambda: self.concept_explainer(
                                 concept=concept.strip(),
@@ -212,7 +212,7 @@ class DocumentGroundedExtractor(dspy.Module):
                             "connection": concept_explanation.connection_to_main_topic
                         }
                     except Exception as e:
-                        print(f"  ⚠️ Could not explain {concept}: {e}")
+                        print(f"   Could not explain {concept}: {e}")
                         continue
         
         return {
@@ -254,11 +254,11 @@ class DocumentGroundedExtractor(dspy.Module):
                             suggested_delay = float(retry_match.group(1))
                             delay = max(delay, suggested_delay)
                         
-                        print(f"  ⏳ Rate limit hit. Retrying in {delay:.1f}s (attempt {attempt + 1}/{max_retries})")
+                        print(f"   Rate limit hit. Retrying in {delay:.1f}s (attempt {attempt + 1}/{max_retries})")
                         time.sleep(delay)
                         continue
                     else:
-                        print(f"  ❌ Max retries exceeded for rate limiting")
+                        print(f"   Max retries exceeded for rate limiting")
                         raise e
                 else:
                     # Non-rate-limit error, don't retry
@@ -385,7 +385,7 @@ Create a professional, research-based teaching plan that ensures deep conceptual
                 )
             )
         except Exception as e:
-            print(f"❌ Failed to generate teaching plan: {e}")
+            print(f" Failed to generate teaching plan: {e}")
             # Return minimal fallback plan
             plan_result = type('obj', (object,), {
                 'teaching_sequence': f"Basic introduction to {topic}",
@@ -519,11 +519,11 @@ Source Document: {content.get('source_document', 'Unknown source')}
                             suggested_delay = float(retry_match.group(1))
                             delay = max(delay, suggested_delay)
                         
-                        print(f"  ⏳ Rate limit hit. Retrying in {delay:.1f}s (attempt {attempt + 1}/{max_retries})")
+                        print(f"   Rate limit hit. Retrying in {delay:.1f}s (attempt {attempt + 1}/{max_retries})")
                         time.sleep(delay)
                         continue
                     else:
-                        print(f"  ❌ Max retries exceeded for rate limiting")
+                        print(f"   Max retries exceeded for rate limiting")
                         raise e
                 else:
                     raise e
@@ -1094,7 +1094,7 @@ class DSPyManipWorkflow(dspy.Module):
                 print(f"✅ Successfully configured model: {model}")
                 return
             except Exception as e:
-                print(f"❌ Failed to configure {model}: {e}")
+                print(f" Failed to configure {model}: {e}")
                 continue
         
         raise ValueError("Could not configure any Gemini model. Check your API key and quotas.")
@@ -1213,5 +1213,5 @@ class DSPyManipWorkflow(dspy.Module):
 
         with open(output_path, 'w', encoding='utf-8') as f:
             f.write(final_code)
-        print(f"💾 Saved code to: {output_path}")
+        print(f" Saved code to: {output_path}")
         return output_path

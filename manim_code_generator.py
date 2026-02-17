@@ -420,7 +420,7 @@ class {class_name}(VoiceoverScene):
             width=4, height=3, corner_radius=0.2,
             color=self.colors['text'], fill_opacity=0.05, stroke_opacity=0.3
         )
-        icon = Text("📊", font_size=48)
+        icon = Text("", font_size=48)
         text = Text("Visual Content", font_size=16, color=self.colors['muted'])
         text.next_to(icon, DOWN)
         
@@ -441,7 +441,7 @@ class {class_name}(VoiceoverScene):
         """
         Generate professional Manim code with advanced visualizations and voiceover
         """
-        print("🎬 Starting professional Manim code generation with voiceover integration...")
+        print(" Starting professional Manim code generation with voiceover integration...")
         
         # Parse narrative script if not already parsed
         if parsed_data is None:
@@ -449,8 +449,8 @@ class {class_name}(VoiceoverScene):
         
         sections = parsed_data['sections']
         
-        print(f"📊 Processing {len(sections)} sections with enhanced visualizations and voiceover...")
-        print(f"🎙️ Voiceover segments: {sum(len(s.segments) for s in sections)}")
+        print(f" Processing {len(sections)} sections with enhanced visualizations and voiceover...")
+        print(f" Voiceover segments: {sum(len(s.segments) for s in sections)}")
         
         # Get available images
         available_images = self._get_available_images(images_folder)
@@ -460,7 +460,7 @@ class {class_name}(VoiceoverScene):
         class_name = self._generate_class_name(topic)
         topic_type = self._analyze_topic_type(narrative_script)
         
-        print(f"🎯 Detected topic type: {topic_type}")
+        print(f" Detected topic type: {topic_type}")
         
         # Check if voiceover is enabled (default to True)
         voiceover_enabled = parsed_data.get('metadata', {}).get('voiceover_enabled', True)
@@ -528,7 +528,7 @@ CRITICAL REQUIREMENTS:
 - Use color coding for different concepts (actual vs predicted, etc.)
 - Include SMOOTH animations and transitions
 - SYNCHRONIZE all animations with voiceover using 'with self.voiceover(text="...") as tracker:'
-- ⚠️ CRITICAL: Ensure all text and animations are arranged so there is no overlap between any objects, using appropriate positioning methods like .arrange(), .next_to(), and .shift(). All elements must be clearly readable and not cover each other at any point in the animation.
+-  CRITICAL: Ensure all text and animations are arranged so there is no overlap between any objects, using appropriate positioning methods like .arrange(), .next_to(), and .shift(). All elements must be clearly readable and not cover each other at any point in the animation.
 
 TOPIC TYPE DETECTED: {topic_type.upper()}
 {viz_instructions}
@@ -888,7 +888,7 @@ CRITICAL REQUIREMENTS:
 - Keep ALL relevant elements visible - DON'T erase previous content unnecessarily
 - Use color coding for different concepts (actual vs predicted, etc.)
 - Include SMOOTH animations and transitions
-- ⚠️ CRITICAL: Ensure all text and animations are arranged so there is no overlap between any objects, using appropriate positioning methods like .arrange(), .next_to(), and .shift(). All elements must be clearly readable and not cover each other at any point in the animation.
+-  CRITICAL: Ensure all text and animations are arranged so there is no overlap between any objects, using appropriate positioning methods like .arrange(), .next_to(), and .shift(). All elements must be clearly readable and not cover each other at any point in the animation.
 
 TOPIC TYPE DETECTED: {topic_type.upper()}
 {viz_instructions}

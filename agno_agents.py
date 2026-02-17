@@ -188,8 +188,8 @@ def parse_manim_code(response_text: str) -> ManimCode:
         return ManimCode(**data)
     except json.JSONDecodeError as e:
         # If direct parse fails, try to extract and fix the JSON
-        print(f"⚠️  Initial JSON parse failed: {e}")
-        print(f"   Attempting to fix control characters...")
+        print(f"Initial JSON parse failed: {e}")
+        print(f"Attempting to fix control characters...")
         
         # Strategy: Extract the structure manually
         # Find filename
@@ -243,5 +243,5 @@ def parse_manim_code(response_text: str) -> ManimCode:
             return ManimCode(filename=filename, code=code, explanation=explanation)
             
         except Exception as e2:
-            print(f"❌ Failed to manually extract code: {e2}")
+            print(f"Failed to manually extract code: {e2}")
             raise ValueError(f"Could not parse Manim code response. Original error: {e}, Manual extraction error: {e2}")

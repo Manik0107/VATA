@@ -18,7 +18,7 @@ def extract_text_from_pdf(pdf_path: str) -> str:
     from agno_agents import get_pdf_extractor_agent
     import base64
     
-    print(f"📄 Reading PDF: {pdf_path}")
+    print(f"Reading PDF: {pdf_path}")
     
     try:
         # Read PDF as bytes
@@ -44,9 +44,9 @@ Please extract and return all the text content from this PDF, preserving logical
         return response.content
         
     except Exception as e:
-        print(f"❌ Failed to read PDF with Agno agent: {e}")
-        print(f"⚠️  Make sure your OPENROUTER_API_KEY has sufficient credits.")
-        print(f"   Visit https://openrouter.ai/settings/credits to add credits")
+        print(f"Failed to read PDF with Agno agent: {e}")
+        print(f"Make sure your OPENROUTER_API_KEY has sufficient credits.")
+        print(f"Visit https://openrouter.ai/settings/credits to add credits")
         sys.exit(1)
 
 
@@ -62,7 +62,7 @@ def validate_manim_code(code_file: str) -> tuple[bool, str]:
         return False, f"File not found: {code_file}"
     
     try:
-        print(f"🔍 Validating {code_file} with manim --dry_run...")
+        print(f"Validating {code_file} with manim --dry_run...")
         result = subprocess.run(
             ["uv", "run", "manim", code_file, "GenScene", "--dry_run"],
             capture_output=True,
@@ -71,7 +71,7 @@ def validate_manim_code(code_file: str) -> tuple[bool, str]:
         )
         
         if result.returncode == 0:
-            print("✅ Code validation passed!")
+            print("Code validation passed!")
             return True, ""
         else:
             # Smart error filtering (inspired by selfhealingcode.py)
@@ -113,7 +113,7 @@ def validate_manim_code(code_file: str) -> tuple[bool, str]:
                 # If no errors found after filtering but return code != 0
                 errors = stderr_text[-500:]  # Last 500 chars as fallback
             
-            print(f"❌ Validation failed with error:\n{errors[:500]}")
+            print(f"Validation failed with error:\n{errors[:500]}")
             return False, errors
             
     except subprocess.TimeoutExpired:
@@ -132,15 +132,13 @@ def main():
 
     # Validate file
     if not Path(input_pdf).exists():
-        print(f"❌ Input file not found: {input_pdf}")
+        print(f"Input file not found: {input_pdf}")
         return
 
-    # 2. Extract Content
     print("\n--- Phase 1: content Extraction ---")
     pdf_text = extract_text_from_pdf(input_pdf)
-    print(f"✅ Extracted {len(pdf_text)} characters.")
+    print(f"Extracted {len(pdf_text)} characters.")
 
-    # 3. Animator Agent (The "Director")
     print("\n--- Phase 2: Creative Direction (Animator Agent) ---")
     animator = get_animator_agent()
     
@@ -154,26 +152,24 @@ def main():
     Create a storyboard that explains this perfectly to a beginner.
     """
     
-    print("🎥 Animator is thinking...")
+    print("Animator is thinking...")
     storyboard_response = animator.run(animator_input)
     
-    # Parse the JSON response
     response_text = storyboard_response.content
-    print(f"📝 Raw response length: {len(response_text)} characters")
+    print(f"Raw response length: {len(response_text)} characters")
     
     try:
         from agno_agents import parse_storyboard
         storyboard = parse_storyboard(response_text)
     except Exception as e:
-        print(f"❌ Failed to parse storyboard JSON: {e}")
+        print(f"Failed to parse storyboard JSON: {e}")
         print(f"Raw response: {response_text[:500]}...")
         sys.exit(1)
     
-    print(f"✅ Storyboard created: {len(storyboard.scenes)} scenes.")
+    print(f"Storyboard created: {len(storyboard.scenes)} scenes.")
     for i, scene in enumerate(storyboard.scenes):
         print(f"   {i+1}. {scene.title} ({scene.duration_seconds}s)")
 
-    # 4. Coder Agent (The "Engineer") - WITH RETRY LOOP
     print("\n--- Phase 3: Production (Coder Agent) ---")
     coder = get_coder_agent()
     
@@ -190,22 +186,21 @@ def main():
     output_filename = "generated_agno_manim.py"
     
     for attempt in range(max_retries):
-        print(f"💻 Coder is coding (attempt {attempt + 1}/{max_retries})...")
+        print(f"Coder is coding (attempt {attempt + 1}/{max_retries})...")
         code_response = coder.run(coder_input)
         
-        # Parse the JSON response
         response_text = code_response.content
-        print(f"📝 Raw coder response length: {len(response_text)} characters")
+        print(f"Raw coder response length: {len(response_text)} characters")
         
         try:
             from agno_agents import parse_manim_code
             manim_code_obj = parse_manim_code(response_text)
         except Exception as e:
-            print(f"❌ Failed to parse Manim code JSON: {e}")
+            print(f"Failed to parse Manim code JSON: {e}")
             print(f"Raw response: {response_text[:500]}...")
             
             if attempt < max_retries - 1:
-                print(f"🔄 Retrying with error feedback...")
+                print(f"Retrying with error feedback...")
                 coder_input = f"""
                 Your previous response had a JSON parsing error: {e}
                 
@@ -223,8 +218,7 @@ def main():
             else:
                 sys.exit(1)
         
-        # 5. Save and validate the code
-        print(f"\n💾 Saving generated code to {output_filename}...")
+        print(f"\nSaving generated code to {output_filename}...")
         with open(output_filename, "w", encoding="utf-8") as f:
             f.write(manim_code_obj.code)
         
@@ -232,15 +226,14 @@ def main():
         is_valid, error_msg = validate_manim_code(output_filename)
         
         if is_valid:
-            print(f"✅ Code generated successfully and passed validation!")
-            print(f"📝 Explanation: {manim_code_obj.explanation}")
+            print(f"Code generated successfully and passed validation!")
+            print(f"Explanation: {manim_code_obj.explanation}")
             break
         else:
-            print(f"⚠️  Code has errors. Attempt {attempt + 1}/{max_retries}")
+            print(f"Code has errors. Attempt {attempt + 1}/{max_retries}")
             
             if attempt < max_retries - 1:
-                print(f"🔄 Sending error feedback to Coder Agent...")
-                # CRITICAL: Include the ACTUAL CODE that failed
+                print(f"Sending error feedback to Coder Agent...")
                 coder_input = f"""
                 Your previous code had errors when tested with manim --dry_run.
                 
@@ -270,8 +263,8 @@ def main():
                 }}
                 """
             else:
-                print(f"❌ Max retries ({max_retries}) exceeded. Code still has errors.")
-                print(f"   You may need to manually fix {output_filename}")
+                print(f"Max retries ({max_retries}) exceeded. Code still has errors.")
+                print(f"You may need to manually fix {output_filename}")
                 break
 
 if __name__ == "__main__":
